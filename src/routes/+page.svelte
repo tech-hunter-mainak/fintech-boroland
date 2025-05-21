@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
-	import CreditScoreForm from '../lib/components/CreditScoreForm.svelte';
+	import CreditScoreForm from '$lib/components/CreditScoreForm.svelte';
 	import WhatIsCredit from '$lib/components/WhatIsCredit.svelte';
 	import WhyChooseUs from '$lib/components/WhyChooseUs.svelte';
 	import Reviews from '$lib/components/Reviews.svelte';

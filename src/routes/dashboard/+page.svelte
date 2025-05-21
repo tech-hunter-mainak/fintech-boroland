@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
-	import Dashboard from '../../components/Dashboard.svelte';
+	import Dashboard from '$lib/components/Dashboard.svelte';
 	import { userSession } from '$lib/stores/userStore';
 
 	let userData: any = null;
