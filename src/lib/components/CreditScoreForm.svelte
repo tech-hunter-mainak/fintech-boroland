@@ -34,7 +34,7 @@
 	};
 
 	const isValidMobile = (number: string) => {
-		return /^[6-9]\d{9}$/.test(number);
+		return true;
 	};
 
 	const toggleVerificationMethod = () => {
@@ -170,9 +170,7 @@
 				<input
 					type="tel"
 					bind:value={mobile}
-					on:input={handleMobileInput}
 					placeholder="Mobile Number"
-					pattern="[6-9][0-9]{9}"
 					maxlength="10"
 					class="w-full rounded-md border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 {!isValidMobile(
 						mobile

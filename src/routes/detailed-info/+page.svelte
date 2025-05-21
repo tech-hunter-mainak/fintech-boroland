@@ -49,18 +49,18 @@
 
 	const ownershipOptions = ['Land', 'Machine', 'Vehicle', 'None'];
 
-	onMount(async () => {
-		// Check if user data exists in session storage
-		const userData = sessionStorage.getItem('userData');
-		if (!userData) {
-			goto('/');
-			return;
-		}
+	// onMount(async () => {
+	// 	// Check if user data exists in session storage
+	// 	const userData = sessionStorage.getItem('userData');
+	// 	if (!userData) {
+	// 		goto('/');
+	// 		return;
+	// 	}
 
-		// Pre-fill some fields from existing user data
-		const parsedData = JSON.parse(userData);
-		formData.gender = parsedData.gender.toUpperCase().charAt(0);
-	});
+	// 	// Pre-fill some fields from existing user data
+	// 	const parsedData = JSON.parse(userData);
+	// 	formData.gender = parsedData.gender.toUpperCase().charAt(0);
+	// });
 
 	const handleSubmit = async () => {
 		try {

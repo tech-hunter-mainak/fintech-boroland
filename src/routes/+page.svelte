@@ -6,6 +6,7 @@
 	import WhyChooseUs from '$lib/components/WhyChooseUs.svelte';
 	import Reviews from '$lib/components/Reviews.svelte';
 	import FAQ from '$lib/components/FAQ.svelte';
+	import Hero from '$lib/components/Hero.svelte';
 
 	let submitted = false;
 
@@ -39,6 +40,8 @@
 		}
 	};
 </script>
+
+<Hero />
 
 {#if !submitted}
 	<main class="bg-gray-100">

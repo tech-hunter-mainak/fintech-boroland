@@ -1,85 +1,134 @@
-<script lang="ts">
-	let openQuestion = '';
+<div class="py-4 max-w-screen-lg mx-auto">
+    <div class="text-center mb-16">
+        <p class="mt-4 text-sm leading-7 text-gray-500 font-regular">
+            F.A.Q
+        </p>
+        <h3 class="text-3xl sm:text-4xl leading-normal font-extrabold tracking-tight text-gray-900">
+            Frequently Asked <span class="text-indigo-600">Questions</span>
+        </h3>
+    </div>
 
-	const faqs = [
-		{
-			id: '1',
-			question: 'Who Can Use This?',
-			answer:
-				'This platform is specifically designed for Bodo individuals & MSMEs in BTR (Bodoland Territorial Region). If you are a member of the Bodo community and need credit assessment, you can use this service.'
-		},
-		{
-			id: '2',
-			question: 'Does It Affect My CIBIL Score?',
-			answer:
-				'No—this is a separate, complementary assessment. Our AI-powered system uses different parameters that are more relevant to the Bodo community, such as vocational skills and local economic factors. Your traditional credit score remains unaffected.'
-		},
-		{
-			id: '3',
-			question: 'How Often Can I Check?',
-			answer:
-				'You can check your score unlimited times for free. Our AI models are refreshed monthly with new data to ensure accuracy and fairness. Each check provides updated recommendations for improving your creditworthiness.'
-		},
-		{
-			id: '4',
-			question: 'Is My Data Secure?',
-			answer:
-				'Yes, your data is fully protected with SSL encryption. We only use anonymized data for model improvements. Your personal information is never shared without your explicit consent.'
-		},
-		{
-			id: '5',
-			question: 'How Do I Dispute an Error?',
-			answer:
-				'You can contact our local liaison officer or raise a ticket via the portal. We have community representatives who speak Bodo and can help resolve any issues. All disputes are reviewed within 48 hours.'
-		},
-		{
-			id: '6',
-			question: 'What Makes This Different from Traditional Credit Scores?',
-			answer:
-				'Our system is specifically designed for the Bodo community, considering factors like traditional skills, seasonal income patterns, and community references. We understand that traditional credit scores might not reflect the true creditworthiness of Bodo individuals.'
-		}
-	];
+    <div class="px-10 sm:px-16 sm:flex items-start mb-10">
 
-	const toggleQuestion = (id: string) => {
-		openQuestion = openQuestion === id ? '' : id;
-	};
-</script>
+        <h3 class="py-3 font-bold text-lg text-gray-900 w-3/12">
+            Technical
+        </h3>
+        <div class="w-9/12">
+            <div class="flex items-start mb-8">
+                <div
+                    class="hidden sm:flex items-center justify-center p-3 mr-3 rounded-full bg-indigo-500 text-white border-4 border-white text-xl font-semibold">
+                    <svg width="24px" fill="white" height="24px" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <g data-name="Layer 2">
+                            <g data-name="menu-arrow">
+                                <rect width="24" height="24" transform="rotate(180 12 12)" opacity="0"></rect>
+                                <path
+                                    d="M17 9A5 5 0 0 0 7 9a1 1 0 0 0 2 0 3 3 0 1 1 3 3 1 1 0 0 0-1 1v2a1 1 0 0 0 2 0v-1.1A5 5 0 0 0 17 9z">
+                                </path>
+                                <circle cx="12" cy="19" r="1"></circle>
+                            </g>
+                        </g>
+                    </svg>
+                </div>
+                <div class="text-md">
+                    <h1 class="text-gray-900 font-semibold mb-2">What might be your first question?</h1>
+                    <p class="text-gray-500 text-sm">Lorem ipsum, dolor sit amet consectetur adipisicing elit. Maiores
+                        impedit perferendis suscipit eaque, iste dolor cupiditate blanditiis ratione.</p>
+                </div>
+            </div>
+            <div class="flex items-start mb-8">
+                <div
+                    class="hidden sm:flex items-center justify-center p-3 mr-3 rounded-full bg-indigo-500 text-white border-4 border-white text-xl font-semibold">
+                    <svg width="24px" fill="white" height="24px" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <g data-name="Layer 2">
+                            <g data-name="menu-arrow">
+                                <rect width="24" height="24" transform="rotate(180 12 12)" opacity="0"></rect>
+                                <path
+                                    d="M17 9A5 5 0 0 0 7 9a1 1 0 0 0 2 0 3 3 0 1 1 3 3 1 1 0 0 0-1 1v2a1 1 0 0 0 2 0v-1.1A5 5 0 0 0 17 9z">
+                                </path>
+                                <circle cx="12" cy="19" r="1"></circle>
+                            </g>
+                        </g>
+                    </svg>
+                </div>
+                <div class="text-md">
+                    <h1 class="text-gray-900 font-semibold mb-2">What might be your first question?</h1>
+                    <p class="text-gray-500 text-sm">Lorem ipsum, dolor sit amet consectetur adipisicing elit. Maiores
+                        impedit perferendis suscipit eaque, iste dolor cupiditate blanditiis ratione.</p>
+                </div>
+            </div>
+            <div class="flex items-start mb-8">
+                <div
+                    class="hidden sm:flex items-center justify-center p-3 mr-3 rounded-full bg-indigo-500 text-white border-4 border-white text-xl font-semibold">
+                    <svg width="24px" fill="white" height="24px" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <g data-name="Layer 2">
+                            <g data-name="menu-arrow">
+                                <rect width="24" height="24" transform="rotate(180 12 12)" opacity="0"></rect>
+                                <path
+                                    d="M17 9A5 5 0 0 0 7 9a1 1 0 0 0 2 0 3 3 0 1 1 3 3 1 1 0 0 0-1 1v2a1 1 0 0 0 2 0v-1.1A5 5 0 0 0 17 9z">
+                                </path>
+                                <circle cx="12" cy="19" r="1"></circle>
+                            </g>
+                        </g>
+                    </svg>
+                </div>
+                <div class="text-md">
+                    <h1 class="text-gray-900 font-semibold mb-2">What might be your first question?</h1>
+                    <p class="text-gray-500 text-sm">Lorem ipsum, dolor sit amet consectetur adipisicing elit. Maiores
+                        impedit perferendis suscipit eaque, iste dolor cupiditate blanditiis ratione.</p>
+                </div>
+            </div>
+        </div>
 
-<div class="bg-gray-50 py-16">
-	<div class="container mx-auto px-6">
-		<h2 class="mb-12 text-center text-3xl font-bold">Frequently Asked Questions</h2>
+    </div>
+    <div class="px-10 sm:px-16 sm:flex items-start mb-10">
 
-		<div class="mx-auto max-w-3xl space-y-4">
-			{#each faqs as faq}
-				<div class="overflow-hidden rounded-lg bg-white shadow-md">
-					<button
-						class="flex w-full items-center justify-between px-6 py-4 text-left focus:outline-none"
-						on:click={() => toggleQuestion(faq.id)}
-					>
-						<span class="font-medium">{faq.question}</span>
-						<svg
-							class="h-5 w-5 transform transition-transform duration-200 {openQuestion === faq.id
-								? 'rotate-180'
-								: ''}"
-							fill="none"
-							stroke="currentColor"
-							viewBox="0 0 24 24"
-						>
-							<path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								stroke-width="2"
-								d="M19 9l-7 7-7-7"
-							/>
-						</svg>
-					</button>
-					{#if openQuestion === faq.id}
-						<div class="px-6 pb-4">
-							<p class="text-gray-600">{faq.answer}</p>
-						</div>
-					{/if}
-				</div>
-			{/each}
-		</div>
-	</div>
+        <h3 class="py-3 font-bold text-lg text-gray-900 w-3/12">
+            Billing
+        </h3>
+        <div class="w-9/12">
+            <div class="flex items-start mb-8">
+                <div
+                    class="hidden sm:flex items-center justify-center p-3 mr-3 rounded-full bg-indigo-500 text-white border-4 border-white text-xl font-semibold">
+                    <svg width="24px" fill="white" height="24px" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <g data-name="Layer 2">
+                            <g data-name="menu-arrow">
+                                <rect width="24" height="24" transform="rotate(180 12 12)" opacity="0"></rect>
+                                <path
+                                    d="M17 9A5 5 0 0 0 7 9a1 1 0 0 0 2 0 3 3 0 1 1 3 3 1 1 0 0 0-1 1v2a1 1 0 0 0 2 0v-1.1A5 5 0 0 0 17 9z">
+                                </path>
+                                <circle cx="12" cy="19" r="1"></circle>
+                            </g>
+                        </g>
+                    </svg>
+                </div>
+                <div class="text-md">
+                    <h1 class="text-gray-900 font-semibold mb-2">What might be your first question?</h1>
+                    <p class="text-gray-500 text-sm">Lorem ipsum, dolor sit amet consectetur adipisicing elit. Maiores
+                        impedit perferendis suscipit eaque, iste dolor cupiditate blanditiis ratione.</p>
+                </div>
+            </div>
+            <div class="flex items-start mb-8">
+                <div
+                    class="hidden sm:flex items-center justify-center p-3 mr-3 rounded-full bg-indigo-500 text-white border-4 border-white text-xl font-semibold">
+                    <svg width="24px" fill="white" height="24px" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <g data-name="Layer 2">
+                            <g data-name="menu-arrow">
+                                <rect width="24" height="24" transform="rotate(180 12 12)" opacity="0"></rect>
+                                <path
+                                    d="M17 9A5 5 0 0 0 7 9a1 1 0 0 0 2 0 3 3 0 1 1 3 3 1 1 0 0 0-1 1v2a1 1 0 0 0 2 0v-1.1A5 5 0 0 0 17 9z">
+                                </path>
+                                <circle cx="12" cy="19" r="1"></circle>
+                            </g>
+                        </g>
+                    </svg>
+                </div>
+                <div class="text-md">
+                    <h1 class="text-gray-900 font-semibold mb-2">What might be your first question?</h1>
+                    <p class="text-gray-500 text-sm">Lorem ipsum, dolor sit amet consectetur adipisicing elit. Maiores
+                        impedit perferendis suscipit eaque, iste dolor cupiditate blanditiis ratione.</p>
+                </div>
+            </div>
+        </div>
+
+    </div>
 </div>
