@@ -2,18 +2,21 @@ import postgres from 'postgres';
 import { env } from '$env/dynamic/private';
 
 // Create the SQL client
-const sql = postgres('postgresql://postgres:HCeHiVexynXOCUpQCgyAKjiKyOZlrdVp@gondola.proxy.rlwy.net:33210/railway', {
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : undefined,
-  max: 10,
-  idle_timeout: 20,
-  connect_timeout: 10
-});
+const sql = postgres(
+	'postgresql://postgres:HCeHiVexynXOCUpQCgyAKjiKyOZlrdVp@gondola.proxy.rlwy.net:33210/railway',
+	{
+		ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : undefined,
+		max: 10,
+		idle_timeout: 20,
+		connect_timeout: 10
+	}
+);
 
 // Initialize database by creating tables if they don't exist
 export async function initializeDatabase() {
-  try {
-    // Create users table if it doesn't exist
-    await sql`
+	try {
+		// Create users table if it doesn't exist
+		await sql`
       CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
         gender VARCHAR(10) NOT NULL,
@@ -46,25 +49,25 @@ export async function initializeDatabase() {
       )
     `;
 
-    console.log('Database initialized successfully');
-  } catch (error) {
-    console.error('Error initializing database:', error);
-    throw error;
-  }
+		console.log('Database initialized successfully');
+	} catch (error) {
+		console.error('Error initializing database:', error);
+		throw error;
+	}
 }
 
 // Create or update user
 export async function upsertUser(userData: any) {
-  try {
-    // First, try to find if user exists by email or mobile
-    const existingUser = await sql`
+	try {
+		// First, try to find if user exists by email or mobile
+		const existingUser = await sql`
       SELECT id FROM users WHERE email = ${userData.email} OR mobile = ${userData.mobile}
     `;
 
-    if (existingUser.length > 0) {
-      // Update existing user
-      const userId = existingUser[0].id;
-      const result = await sql`
+		if (existingUser.length > 0) {
+			// Update existing user
+			const userId = existingUser[0].id;
+			const result = await sql`
         UPDATE users 
         SET 
           gender = ${userData.gender},
@@ -95,10 +98,10 @@ export async function upsertUser(userData: any) {
         WHERE id = ${userId}
         RETURNING *
       `;
-      return result[0];
-    } else {
-      // Insert new user
-      const result = await sql`
+			return result[0];
+		} else {
+			// Insert new user
+			const result = await sql`
         INSERT INTO users (
           gender, full_name, email, mobile, whatsapp_updates,
           age, marital_status, family_members, is_primary_earner,
@@ -137,42 +140,42 @@ export async function upsertUser(userData: any) {
         )
         RETURNING *
       `;
-      return result[0];
-    }
-  } catch (error) {
-    console.error('Error upserting user:', error);
-    throw error;
-  }
+			return result[0];
+		}
+	} catch (error) {
+		console.error('Error upserting user:', error);
+		throw error;
+	}
 }
 
 // Get user by email or mobile
 export async function getUserByEmailOrMobile(email: string, mobile: string) {
-  try {
-    const result = await sql`
+	try {
+		const result = await sql`
       SELECT * FROM users WHERE email = ${email} OR mobile = ${mobile}
     `;
-    return result[0] || null;
-  } catch (error) {
-    console.error('Error getting user:', error);
-    throw error;
-  }
+		return result[0] || null;
+	} catch (error) {
+		console.error('Error getting user:', error);
+		throw error;
+	}
 }
 
 // Update user selection status
 export async function updateUserSelection(userId: number, isSelected: boolean) {
-  try {
-    const result = await sql`
+	try {
+		const result = await sql`
       UPDATE users 
       SET is_selected = ${isSelected}, updated_at = CURRENT_TIMESTAMP 
       WHERE id = ${userId} 
       RETURNING *
     `;
-    return result[0];
-  } catch (error) {
-    console.error('Error updating user selection:', error);
-    throw error;
-  }
+		return result[0];
+	} catch (error) {
+		console.error('Error updating user selection:', error);
+		throw error;
+	}
 }
 
 // Initialize database when this module is imported
-initializeDatabase().catch(console.error); 
+initializeDatabase().catch(console.error);

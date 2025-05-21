@@ -1,0 +1,10 @@
+export { default as Hero } from './Hero.svelte';
+export { default as Navbar } from './Navbar.svelte';
+export { default as Footer } from './Footer.svelte';
+export { default as FAQ } from './FAQ.svelte';
+export { default as CreditScoreForm } from './CreditScoreForm.svelte';
+export { default as MyProfile } from './MyProfile.svelte';
+// export { default as Reviews } from './Reviews.svelte';
+// export { default as Reviews } from './Reviews.svelte';
+// export { default as Reviews } from './Reviews.svelte';
+export { default as Reviews } from './Reviews.svelte';
