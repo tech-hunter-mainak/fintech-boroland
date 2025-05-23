@@ -2,49 +2,158 @@
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import CreditScoreForm from '$lib/components/CreditScoreForm.svelte';
+	import LoginForm from '$lib/components/LoginForm.svelte';
 	import WhatIsCredit from '$lib/components/WhatIsCredit.svelte';
 	import WhyChooseUs from '$lib/components/WhyChooseUs.svelte';
 	import Reviews from '$lib/components/Reviews.svelte';
 	import FAQ from '$lib/components/FAQ.svelte';
 	import Hero from '$lib/components/Hero.svelte';
 
+	// Get page data from server
+	export let data;
+
 	let submitted = false;
+	let formType: 'login' | 'register' = 'register';
 
 	onMount(() => {
-		// Check if user has credit data
-		const creditData = sessionStorage.getItem('creditData');
-		if (creditData) {
-			// User already has data, redirect to dashboard
+		// Check if user has a session cookie
+		const hasCookie = document.cookie.includes('session=');
+		
+		// If there's session data, show login form
+		if (hasCookie && !data.user) {
+			formType = 'login';
+		}
+		
+		// If user is fully authenticated, redirect to dashboard
+		if (data.user) {
 			goto('/dashboard');
 		}
 	});
 
 	const handleSubmit = async (event: CustomEvent) => {
-		const { email, mobile } = event.detail;
+		const { gender, fullName, email, mobile, password, whatsappUpdates } = event.detail;
 
-		// Check if user exists using the API endpoint
-		const response = await fetch(
-			`/api/users?email=${encodeURIComponent(email)}&mobile=${encodeURIComponent(mobile)}`
-		);
-		const userData = await response.json();
-
-		// Store basic user data
-		sessionStorage.setItem('userData', JSON.stringify(event.detail));
-
-		if (userData?.age) {
-			// User has already completed detailed info, go to dashboard
-			goto('/dashboard');
-		} else {
-			// User needs to complete detailed info
-			goto('/detailed-info');
+		try {
+			// Register user with the authentication system
+			const response = await fetch('/api/auth', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({
+					action: 'register',
+					userData: {
+						gender,
+						fullName,
+						email,
+						mobile,
+						password,
+						whatsappUpdates
+					}
+				})
+			});
+			
+			const result = await response.json();
+			
+			if (result.success) {
+				// Store basic user data for the next step
+				sessionStorage.setItem('userData', JSON.stringify({
+					authUserId: result.user.id,
+					gender,
+					fullName,
+					email,
+					mobile,
+					whatsappUpdates
+				}));
+				
+				// Redirect to more detailed info
+				goto('/detailed-info');
+			} else {
+				alert(result.error || 'Registration failed. Please try again.');
+			}
+		} catch (error) {
+			console.error("Error handling form submission:", error);
+			alert('Registration failed. Please try again.');
 		}
+	};
+	
+	const handleLogin = async (event: CustomEvent) => {
+		const { identifier, password, rememberMe } = event.detail;
+		
+		try {
+			// Call auth API to handle login
+			console.log('Sending login request with identifier:', identifier);
+			
+			const response = await fetch('/api/auth', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({
+					action: 'login',
+					credentials: {
+						identifier,
+						password
+					},
+					rememberMe
+				})
+			});
+			
+			const result = await response.json();
+			
+			if (result.success) {
+				// Check if user has submitted detailed info
+				if (result.hasDetailedInfo) {
+					console.log('User has submitted detailed info, redirecting to dashboard');
+					// Redirect to dashboard if detailed info is submitted
+					goto('/dashboard');
+				} else {
+					console.log('User has not submitted detailed info, redirecting to detailed-info page');
+					// Redirect to detailed-info form if not submitted
+					
+					// Save basic info to session storage for the detailed-info page
+					sessionStorage.setItem('userData', JSON.stringify({
+						authUserId: result.user.id,
+						gender: result.user.gender,
+						fullName: result.user.fullName,
+						email: result.user.email,
+						mobile: result.user.mobile,
+						whatsappUpdates: result.user.whatsappUpdates
+					}));
+					
+					goto('/detailed-info');
+				}
+			} else {
+				// If the login component is using a reactive variable to show login status,
+				// you need to dispatch an event back to the component
+				document.dispatchEvent(new CustomEvent('login-error', { 
+					detail: { message: result.error || 'Login failed. Please check your credentials.' }
+				}));
+				
+				alert(result.error || 'Login failed. Please check your credentials.');
+			}
+		} catch (error) {
+			console.error("Error during login:", error);
+			
+			// Reset login status in the component
+			document.dispatchEvent(new CustomEvent('login-error', { 
+				detail: { message: 'Login failed. Please try again.' }
+			}));
+			
+			alert('Login failed. Please try again.');
+		}
+	};
+	
+	const switchForm = (event: CustomEvent) => {
+		const { action } = event.detail;
+		formType = action;
 	};
 </script>
 
 <Hero />
 
 {#if !submitted}
-	<main class="bg-gray-100">
+	<div class="bg-gray-100">
 		<!-- Hero Section -->
 		<section class="min-h-[80vh] bg-gradient-to-r from-blue-600 to-indigo-800">
 			<div class="container mx-auto flex items-center px-6 py-12">
@@ -83,7 +192,11 @@
 					</div>
 				</div>
 				<div class="w-1/2">
-					<CreditScoreForm on:submit={handleSubmit} />
+					{#if formType === 'register'}
+						<CreditScoreForm on:submit={handleSubmit} on:switchForm={switchForm} />
+					{:else}
+						<LoginForm on:login={handleLogin} on:switchForm={switchForm} />
+					{/if}
 				</div>
 			</div>
 		</section>
@@ -101,7 +214,7 @@
 		<FAQ />
 
 		<!-- Footer -->
-	</main>
+	</div>
 {:else}
 	<div
 		class="flex min-h-screen items-center justify-center bg-gradient-to-r from-blue-600 to-indigo-800"

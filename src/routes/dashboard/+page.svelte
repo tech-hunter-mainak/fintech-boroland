@@ -1,47 +1,53 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { goto } from '$app/navigation';
 	import Dashboard from '$lib/components/Dashboard.svelte';
 	import { userSession } from '$lib/stores/userStore';
+	import { browser } from '$app/environment';
 
-	let userData: any = null;
-	let creditData: any = null;
+	// Get data from server load function
+	export let data;
+
+	// Define the credit data type
+	interface CreditData {
+		isSelected: boolean;
+		score: number;
+		reason: string;
+	}
+
+	// Dashboard data from server and store
+	let userData = data?.user || null;
+	let creditData: CreditData | null = null;
 
 	onMount(() => {
-		// Check session storage first
-		const storedUserData = sessionStorage.getItem('userData');
-		const storedCreditData = sessionStorage.getItem('creditData');
-
-		if (!storedUserData) {
-			goto('/');
-			return;
-		}
-
-		// Initialize session if data exists in storage
-		if (storedUserData && storedCreditData) {
-			const parsedUserData = JSON.parse(storedUserData);
-			const parsedCreditData = JSON.parse(storedCreditData);
-			userSession.login(parsedUserData, parsedCreditData);
-		}
-
-		// Subscribe to the store
-		const unsubscribe = userSession.subscribe((session) => {
-			if (!session.isLoggedIn) {
-				goto('/');
-				return;
+		console.log('Dashboard component mounted');
+		console.log('Server data:', data);
+		
+		if (browser) {
+			// Check for credit data in session storage
+			try {
+				const storedCreditData = sessionStorage.getItem('creditData');
+				if (storedCreditData) {
+					creditData = JSON.parse(storedCreditData) as CreditData;
+				}
+			} catch (e) {
+				console.error('Error reading credit data from session storage:', e);
 			}
-			userData = session.user;
-			creditData = session.creditData;
-		});
-
-		return () => {
-			unsubscribe();
-		};
+			
+			// If we have user data from the server, update the store
+			if (userData) {
+				console.log('Updating user session with server data');
+				userSession.login(userData, creditData);
+			}
+		}
 	});
 </script>
 
 {#if userData}
-	<Dashboard userName={userData.name || userData.fullName || 'User'} {creditData} {userData} />
+	<Dashboard 
+		userName={userData.full_name || userData.email || 'User'} 
+		creditData={creditData} 
+		userData={userData} 
+	/>
 {:else}
 	<div class="py-12 text-center">
 		<div class="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-b-2 border-blue-500"></div>

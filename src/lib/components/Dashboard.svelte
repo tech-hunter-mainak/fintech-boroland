@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { userSession } from '$lib/stores/userStore';
-	import { goto } from '$app/navigation';
+	import { onMount, onDestroy } from 'svelte';
+	import { browser } from '$app/environment';
 	import MyProfile from './MyProfile.svelte';
 
 	export let userName: string = '';
@@ -13,6 +14,33 @@
 
 	let isLoading = true;
 	let currentView = 'dashboard';
+	let isSmallScreen = false;
+
+	// Helper functions for accessing user data consistently
+	function getScoreValue(): number {
+		// First check session credit data, then database value, default to 0
+		return creditData?.score || userData?.prediction_percentage || 0;
+	}
+
+	function getScoreColor(): string {
+		const score = getScoreValue();
+		if (score >= 70) return '#10B981'; // Green for high scores
+		if (score >= 50) return '#F59E0B'; // Yellow/amber for medium scores
+		return '#EF4444'; // Red for low scores
+	}
+
+	function isUserSelected(): boolean {
+		// Check both session data and database value
+		return creditData?.isSelected || userData?.is_selected;
+	}
+
+	function getLastUpdatedDate(): string {
+		// Use the database updated_at timestamp if available, otherwise current date
+		if (userData?.updated_at) {
+			return new Date(userData.updated_at).toLocaleDateString();
+		}
+		return new Date().toLocaleDateString();
+	}
 
 	const sidebarItems = [
 		{
@@ -60,87 +88,128 @@
 		}
 	];
 
-	const handleLogout = () => {
-		userSession.logout();
-		goto('/');
+	const handleLogout = async () => {
+		try {
+			// Call the logout API endpoint to clear server-side cookies
+			await fetch('/api/auth', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({
+					action: 'logout'
+				})
+			});
+			
+			// Clear client-side storage
+			userSession.logout();
+			
+			// Navigate to home page with a reload to ensure fresh state
+			window.location.href = '/';
+		} catch (error) {
+			console.error('Error during logout:', error);
+		}
 	};
 
 	const handleNavigation = (itemId: string) => {
 		currentView = itemId;
 	};
-
-	// Simulate loading
-	setTimeout(() => {
-		isLoading = false;
-	}, 1000);
+	
+	// Handle menu item clicks from the navbar
+	const handleNavbarMenuClick = (event: Event) => {
+		// Cast to CustomEvent with the right type
+		const customEvent = event as CustomEvent<{itemId: string}>;
+		const { itemId } = customEvent.detail;
+		handleNavigation(itemId);
+	};
+	
+	// Check screen size
+	const checkScreenSize = () => {
+		if (browser) {
+			isSmallScreen = window.innerWidth < 1024;
+		}
+	};
+	
+	onMount(() => {
+		// Listen for events from navbar
+		window.addEventListener('dashboard-menu-item-click', handleNavbarMenuClick as EventListener);
+		
+		// Add resize listener to detect screen size changes
+		checkScreenSize();
+		window.addEventListener('resize', checkScreenSize);
+		
+		// Simulate loading
+		setTimeout(() => {
+			isLoading = false;
+		}, 1000);
+	});
+	
+	onDestroy(() => {
+		// Clean up event listeners
+		if (browser) {
+			window.removeEventListener('dashboard-menu-item-click', handleNavbarMenuClick as EventListener);
+			window.removeEventListener('resize', checkScreenSize);
+		}
+	});
 </script>
 
 <div class="min-h-screen bg-gray-100">
-	<!-- Navigation -->
-	<nav class="sticky top-0 z-50 bg-white shadow-lg">
-		<div class="container mx-auto px-6 py-4">
-			<div class="flex items-center justify-between">
-				<div
-					class="transform text-2xl font-bold text-blue-600 transition-transform duration-300 ease-in-out hover:scale-105"
-				>
-					Boroland
-				</div>
-				<div class="flex items-center space-x-6">
-					<button
-						class="flex transform items-center text-gray-600 transition-colors duration-300 ease-in-out hover:scale-105 hover:text-blue-600"
-					>
-						<svg class="mr-1 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-							<path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								stroke-width="2"
-								d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
-							></path>
-						</svg>
-						Download App
-					</button>
-					<div class="flex items-center space-x-2">
-						<span
-							class="cursor-pointer text-gray-600 transition-colors duration-300 ease-in-out hover:text-blue-600"
-							>English</span
-						>
-						<span class="text-gray-400">|</span>
-						<span
-							class="cursor-pointer text-gray-600 transition-colors duration-300 ease-in-out hover:text-blue-600"
-							>বড়ো</span
-						>
-					</div>
-					<button
-						on:click={handleLogout}
-						class="transform rounded-lg bg-gray-200 px-4 py-2 text-gray-700 transition-all duration-300 ease-in-out hover:scale-105 hover:bg-gray-300 hover:shadow-md"
-					>
-						Logout
-					</button>
-				</div>
-			</div>
-		</div>
-	</nav>
-
 	<!-- Sidebar and Main Content -->
-	<div class="container mx-auto px-6 py-8">
+	<div class="container mx-auto px-6 py-8 mt-[1.5rem] lg:mt-0">
 		<div class="-mx-4 flex flex-wrap">
-			<!-- Sidebar -->
-			<div class="w-full px-4 md:w-1/4">
-				<div
-					class="sticky top-24 max-h-[calc(100vh-8rem)] overflow-y-auto rounded-lg bg-white p-6 shadow-md transition-all duration-200"
-				>
-					<ul class="space-y-4">
-						{#each sidebarItems as item}
-							<li>
+			<!-- Sidebar - hide on small screens -->
+			{#if !isSmallScreen}
+				<div class="w-full px-4 lg:w-1/4">
+					<div
+						class="sticky top-24 max-h-[calc(100vh-8rem)] overflow-y-auto rounded-lg bg-white p-6 shadow-md transition-all duration-200"
+					>
+						<!-- Add application logo on top -->
+						<div class="mb-6 text-center">
+							<h1 class="text-2xl font-bold text-blue-600">Boroland</h1>
+						</div>
+						
+						<ul class="space-y-4">
+							{#each sidebarItems as item}
+								<li>
+									<button
+										on:click={() => handleNavigation(item.id)}
+										class="flex w-full transform items-center text-gray-600 transition-all duration-300 ease-in-out hover:translate-x-2 hover:text-blue-600 {currentView ===
+										item.id
+											? 'text-blue-600'
+											: ''}"
+									>
+										<svg
+											class="mr-3 h-5 w-5 transform transition-transform duration-300 ease-in-out group-hover:rotate-12"
+											fill="none"
+											stroke="currentColor"
+											viewBox="0 0 24 24"
+										>
+											<path
+												stroke-linecap="round"
+												stroke-linejoin="round"
+												stroke-width="2"
+												d={item.icon}
+											></path>
+										</svg>
+										<span class="transition-all duration-300 ease-in-out">{item.text}</span>
+										{#if item.badge}
+											<span
+												class="ml-2 transform rounded-full bg-red-100 px-2 py-1 text-xs text-red-600 transition-all duration-300 ease-in-out hover:scale-110"
+												>{item.badge}</span
+											>
+										{/if}
+									</button>
+								</li>
+							{/each}
+							
+							<!-- Add logout button at the bottom of sidebar -->
+							<li class="mt-8 border-t pt-4">
 								<button
-									on:click={() => handleNavigation(item.id)}
-									class="flex w-full transform items-center text-gray-600 transition-all duration-300 ease-in-out hover:translate-x-2 hover:text-blue-600 {currentView ===
-									item.id
-										? 'text-blue-600'
-										: ''}"
+									on:click={handleLogout}
+									class="flex w-full transform items-center text-red-500 transition-all duration-300 ease-in-out hover:translate-x-2 hover:text-red-600"
 								>
 									<svg
-										class="mr-3 h-5 w-5 transform transition-transform duration-300 ease-in-out group-hover:rotate-12"
+										class="mr-3 h-5 w-5"
 										fill="none"
 										stroke="currentColor"
 										viewBox="0 0 24 24"
@@ -149,25 +218,19 @@
 											stroke-linecap="round"
 											stroke-linejoin="round"
 											stroke-width="2"
-											d={item.icon}
+											d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
 										></path>
 									</svg>
-									<span class="transition-all duration-300 ease-in-out">{item.text}</span>
-									{#if item.badge}
-										<span
-											class="ml-2 transform rounded-full bg-red-100 px-2 py-1 text-xs text-red-600 transition-all duration-300 ease-in-out hover:scale-110"
-											>{item.badge}</span
-										>
-									{/if}
+									<span>Logout</span>
 								</button>
 							</li>
-						{/each}
-					</ul>
+						</ul>
+					</div>
 				</div>
-			</div>
+			{/if}
 
-			<!-- Main Content -->
-			<div class="mt-8 w-full px-4 md:mt-0 md:w-3/4">
+			<!-- Main Content - adjust width based on screen size -->
+			<div class="mt-8 w-full px-4 lg:mt-0 {isSmallScreen ? 'w-full' : 'lg:w-3/4'}">
 				{#if isLoading}
 					<div
 						class="rounded-lg bg-white p-8 text-center shadow-md transition-all duration-300 ease-in-out"
@@ -184,93 +247,66 @@
 					<div
 						class="mb-8 transform rounded-lg bg-white p-8 shadow-md transition-all duration-300 ease-in-out hover:-translate-y-1 hover:shadow-lg"
 					>
-						<div class="mb-8 text-center">
-							<h2 class="mb-2 text-2xl font-bold">Hey {userName}!</h2>
-							{#if creditData}
-								<div class="mt-6 grid grid-cols-1 gap-8 md:grid-cols-3">
-									<!-- Credit Score Circle -->
-									<div class="text-center">
-										<div class="relative mx-auto mb-4 h-40 w-40">
-											<svg viewBox="0 0 36 36" class="h-full w-full">
-												<path
-													d="M18 2.0845
-                              a 15.9155 15.9155 0 0 1 0 31.831
-                              a 15.9155 15.9155 0 0 1 0 -31.831"
-													fill="none"
-													stroke="#E5E7EB"
-													stroke-width="3"
-												/>
-												<path
-													d="M18 2.0845
-                              a 15.9155 15.9155 0 0 1 0 31.831
-                              a 15.9155 15.9155 0 0 1 0 -31.831"
-													fill="none"
-													stroke={creditData.score >= 70
-														? '#10B981'
-														: creditData.score >= 50
-															? '#F59E0B'
-															: '#EF4444'}
-													stroke-width="3"
-													stroke-dasharray={`${creditData.score}, 100`}
-												/>
-												<text
-													x="18"
-													y="16"
-													class="text-4xl font-bold"
-													text-anchor="middle"
-													dominant-baseline="middle"
-													fill="currentColor"
-												>
-													{creditData.score}
-												</text>
-												<text
-													x="18"
-													y="24"
-													class="text-[8px]"
-													text-anchor="middle"
-													dominant-baseline="middle"
-													fill="currentColor"
-												>
-													%
-												</text>
-											</svg>
+						<div class="mb-8">
+							<h2 class="mb-4 text-2xl font-bold text-center">Hey {userName}!</h2>
+							<div class="mt-6 grid grid-cols-1 gap-8 md:grid-cols-3">
+								<!-- Replace Credit Score Circle with better display -->
+								<div class="text-center">
+									<div class="relative mx-auto mb-4 rounded-lg bg-gray-50 p-4 shadow-inner">
+										<div 
+											class="flex flex-col items-center justify-center"
+											style="height: 150px;">
+											<div class="text-5xl font-bold tracking-tight" 
+												style="color: {getScoreColor()}">
+												{getScoreValue()}%
+											</div>
+											<div class="mt-2 text-sm text-gray-500">Credit Score</div>
+											<div class="mt-4 h-2 w-full rounded-full bg-gray-200">
+												<div 
+													class="h-2 rounded-full" 
+													style="width: {getScoreValue()}%; background-color: {getScoreColor()}">
+												</div>
+											</div>
 										</div>
-										<p class="text-gray-600">Credit Score</p>
-									</div>
-
-									<!-- Status -->
-									<div class="space-y-4">
-										<div>
-											<h3 class="mb-1 text-sm text-gray-500">Status</h3>
-											<p
-												class="text-lg font-semibold {creditData.isSelected
-													? 'text-green-600'
-													: 'text-red-600'}"
-											>
-												{creditData.isSelected ? 'Approved' : 'Not Approved'}
-											</p>
-										</div>
-										<div>
-											<h3 class="mb-1 text-sm text-gray-500">Last Updated</h3>
-											<p class="font-semibold">{new Date().toLocaleDateString()}</p>
-										</div>
-									</div>
-
-									<!-- Actions -->
-									<div class="space-y-4">
-										<button
-											class="w-full rounded-lg bg-blue-600 px-4 py-2 text-white transition-colors hover:bg-blue-700"
-										>
-											Build Your Credit Score
-										</button>
-										<button
-											class="w-full rounded-lg border border-blue-600 px-4 py-2 text-blue-600 transition-colors hover:bg-blue-50"
-										>
-											View Detailed Report
-										</button>
 									</div>
 								</div>
+
+								<!-- Status -->
+								<div class="space-y-4">
+									<div>
+										<h3 class="mb-1 text-sm text-gray-500">Status</h3>
+										<p
+											class="text-lg font-semibold {isUserSelected() ? 'text-green-600' : 'text-red-600'}"
+										>
+											{isUserSelected() ? 'Approved' : 'Not Approved'}
+										</p>
+									</div>
+									<div>
+										<h3 class="mb-1 text-sm text-gray-500">Last Updated</h3>
+										<p class="font-semibold">{getLastUpdatedDate()}</p>
+									</div>
+								</div>
+
+								<!-- Actions -->
+								<div class="space-y-4">
+									<button
+										class="w-full rounded-lg bg-blue-600 px-4 py-2 text-white transition-colors hover:bg-blue-700"
+									>
+										Build Your Credit Score
+									</button>
+									<button
+										class="w-full rounded-lg border border-blue-600 px-4 py-2 text-blue-600 transition-colors hover:bg-blue-50"
+									>
+										View Detailed Report
+									</button>
+								</div>
+							</div>
+							{#if creditData?.reason}
 								<p class="mt-4 text-gray-600">{creditData.reason}</p>
+							{:else if getScoreValue() > 0}
+								<p class="mt-4 text-gray-600">
+									Based on our AI assessment, you have a {getScoreValue()}% match with successful credit profiles.
+								</p>
 							{:else}
 								<p class="text-gray-600">
 									We are unable to locate your information in Credit Bureau(s) records based on the
@@ -300,7 +336,7 @@
 									<div class="space-y-4">
 										<div class="flex items-center justify-between">
 											<span class="text-gray-600">Monthly Income</span>
-											<span class="font-semibold">₹{userData.monthlyFamilyIncome}</span>
+											<span class="font-semibold">₹{userData.monthly_family_income || userData.monthlyFamilyIncome || 0}</span>
 										</div>
 										<div class="flex items-center justify-between">
 											<span class="text-gray-600">Education</span>
@@ -308,21 +344,31 @@
 										</div>
 										<div class="flex items-center justify-between">
 											<span class="text-gray-600">Skills</span>
-											<span class="font-semibold">{userData.skills?.[0]?.skill || 'N/A'}</span>
+											<span class="font-semibold">{userData.skill_1 || (userData.skills?.[0]?.skill) || 'N/A'}</span>
 										</div>
 									</div>
 									<div class="space-y-4">
 										<div class="flex items-center justify-between">
 											<span class="text-gray-600">Monthly Expenses</span>
-											<span class="font-semibold">₹{userData.monthlyFamilyExpenditure}</span>
+											<span class="font-semibold">₹{userData.monthly_family_expenditure || userData.monthlyFamilyExpenditure || 0}</span>
 										</div>
 										<div class="flex items-center justify-between">
 											<span class="text-gray-600">Certifications</span>
-											<span class="font-semibold">{userData.hasCertification || 'No'}</span>
+											<span class="font-semibold">{userData.has_certification || userData.hasCertification || 'No'}</span>
 										</div>
 										<div class="flex items-center justify-between">
 											<span class="text-gray-600">Assets</span>
-											<span class="font-semibold">{userData.ownership?.join(', ') || 'None'}</span>
+											<span class="font-semibold">
+												{(() => {
+													if (userData.ownership && Array.isArray(userData.ownership)) {
+														return userData.ownership.join(', ');
+													} else if (typeof userData.ownership === 'string') {
+														return userData.ownership;
+													} else {
+														return 'None';
+													}
+												})()}
+											</span>
 										</div>
 									</div>
 								</div>
@@ -351,7 +397,7 @@
 							<h2 class="text-2xl font-bold">Pre Approved & Pre Qualified Offers</h2>
 						</div>
 						<div class="grid grid-cols-1 gap-6 md:grid-cols-2">
-							{#if creditData?.isSelected}
+							{#if isUserSelected()}
 								<div class="rounded-lg border p-6 transition-shadow hover:shadow-md">
 									<h3 class="mb-2 text-lg font-semibold">Personal Loan</h3>
 									<p class="mb-4 text-gray-600">

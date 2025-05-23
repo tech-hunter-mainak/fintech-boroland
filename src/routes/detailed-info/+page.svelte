@@ -49,18 +49,29 @@
 
 	const ownershipOptions = ['Land', 'Machine', 'Vehicle', 'None'];
 
-	// onMount(async () => {
-	// 	// Check if user data exists in session storage
-	// 	const userData = sessionStorage.getItem('userData');
-	// 	if (!userData) {
-	// 		goto('/');
-	// 		return;
-	// 	}
+	onMount(async () => {
+		// Check if user data exists in session storage
+		const userData = sessionStorage.getItem('userData');
+		if (!userData) {
+			goto('/');
+			return;
+		}
 
-	// 	// Pre-fill some fields from existing user data
-	// 	const parsedData = JSON.parse(userData);
-	// 	formData.gender = parsedData.gender.toUpperCase().charAt(0);
-	// });
+		// Pre-fill some fields from existing user data
+		const parsedData = JSON.parse(userData);
+		
+		// Make sure to convert gender properly
+		if (parsedData.gender) {
+			if (parsedData.gender.toLowerCase() === 'male') {
+				formData.gender = 'M';
+			} else if (parsedData.gender.toLowerCase() === 'female') {
+				formData.gender = 'F';
+			} else {
+				// If it's already a single character, use it directly
+				formData.gender = parsedData.gender.toUpperCase().charAt(0);
+			}
+		}
+	});
 
 	const handleSubmit = async () => {
 		try {
@@ -74,22 +85,29 @@
 
 			// Combine basic info with detailed info
 			const completeUserData = {
-				...basicInfo,
-				...formData,
-				// Ensure proper data types
+				authUserId: basicInfo.authUserId,  // This is the key link to auth_users table
+				gender: formData.gender,
+				fullName: basicInfo.fullName,
 				age: parseInt(formData.age),
+				maritalStatus: formData.maritalStatus,
 				familyMembers: parseInt(formData.familyMembers),
-				monthlyFamilyIncome: parseFloat(formData.monthlyFamilyIncome),
-				monthlyFamilyExpenditure: parseFloat(formData.monthlyFamilyExpenditure),
+				isPrimaryEarner: formData.isPrimaryEarner,
+				relationWithPrimaryEarner: formData.relationWithPrimaryEarner,
+				education: formData.education,
 				skills: formData.skills.map((skill) => ({
 					...skill,
 					rating: parseInt(skill.rating),
 					years: parseInt(skill.years)
-				}))
+				})),
+				hasCertification: formData.hasCertification,
+				ownership: formData.ownership,
+				monthlyFamilyIncome: parseFloat(formData.monthlyFamilyIncome),
+				monthlyFamilyExpenditure: parseFloat(formData.monthlyFamilyExpenditure),
+				whatsappUpdates: basicInfo.whatsappUpdates
 			};
 
-			// Store in database
-			const saveResponse = await fetch('/api/users', {
+			// Store in database - now updating user details with auth user ID
+			const saveResponse = await fetch('/api/user-details', {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json'
@@ -174,14 +192,15 @@
 
 				// Update user selection status
 				if (savedUser.id) {
-					const updateResponse = await fetch('/api/users', {
+					const updateResponse = await fetch('/api/user-details', {
 						method: 'PATCH',
 						headers: {
 							'Content-Type': 'application/json'
 						},
 						body: JSON.stringify({
-							userId: savedUser.id,
-							isSelected: creditResult.isSelected
+							userId: basicInfo.authUserId,  // Use auth user ID
+							isSelected: creditResult.isSelected,
+							predictionPercentage: creditResult.score // Store the prediction percentage
 						})
 					});
 
@@ -191,10 +210,28 @@
 				}
 
 				// Set user session with complete data
-				userSession.login(savedUser, creditResult);
+				userSession.login({
+					...savedUser,
+					id: basicInfo.authUserId, // Use auth user ID as the main ID
+					email: basicInfo.email,
+					mobile: basicInfo.mobile
+				}, creditResult);
 
-				// Redirect to dashboard
-				goto('/dashboard');
+				// After saving all data, call the server action to convert the temporary session to a full session
+				const sessionResponse = await fetch('?/submitDetails', {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json'
+					},
+					body: JSON.stringify({ processed: true })
+				});
+				
+				const sessionResult = await sessionResponse.json();
+				console.log('Session update result:', sessionResult);
+
+				// Use window.location instead of goto to ensure a full page reload
+				// This prevents the history.pushState() error
+				window.location.href = '/dashboard';
 			} catch (creditError) {
 				console.error('Credit assessment error:', creditError);
 				alert('There was an issue with the credit assessment. Please try again.');

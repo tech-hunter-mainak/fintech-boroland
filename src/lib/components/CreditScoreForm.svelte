@@ -7,13 +7,15 @@
 	let fullName: string = '';
 	let email: string = '';
 	let mobile: string = '';
+	let password: string = '';
+	let confirmPassword: string = '';
 	let acceptTerms: boolean = false;
 	let whatsappUpdates: boolean = false;
 	let mobileDigits: number = 0;
 	let otpSent: boolean = false;
 	let otp: string = '';
-	let verificationMethod: 'email' | 'mobile' = 'mobile';
 	let isVerified: boolean = false;
+	let showPasswordFields: boolean = false;
 
 	const handleMobileInput = (event: Event) => {
 		const input = event.target as HTMLInputElement;
@@ -34,25 +36,24 @@
 	};
 
 	const isValidMobile = (number: string) => {
-		return true;
+		return /^[6-9]\d{9}$/.test(number);
 	};
 
-	const toggleVerificationMethod = () => {
-		verificationMethod = verificationMethod === 'mobile' ? 'email' : 'mobile';
-		otpSent = false;
-		otp = '';
+	const isValidEmail = (email: string) => {
+		return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 	};
 
 	const sendOTP = async () => {
-		// Validate mobile number before sending OTP
-		if (verificationMethod === 'mobile' && !isValidMobile(mobile)) {
-			alert('Please enter a valid 10-digit mobile number starting with 6, 7, 8, or 9');
+		// Validate email before sending OTP
+		if (!isValidEmail(email)) {
+			alert('Please enter a valid email address');
 			return;
 		}
 
 		try {
+			// In a real app, make API call to send OTP to email
 			otpSent = true;
-			alert(`OTP sent to your ${verificationMethod}!`);
+			alert(`OTP sent to your email address: ${email}`);
 		} catch (error) {
 			alert('Failed to send OTP. Please try again.');
 		}
@@ -64,7 +65,7 @@
 			// In real implementation, make API call to verify OTP
 			if (otp.length === 6) {
 				isVerified = true;
-				handleSubmit();
+				showPasswordFields = true; // Show password fields after verification
 			} else {
 				alert('Please enter a valid 6-digit OTP');
 			}
@@ -73,8 +74,18 @@
 		}
 	};
 
+	// Password validation
+	$: passwordsMatch = password === confirmPassword;
+	$: passwordStrong = password.length >= 8;
+
 	const handleSubmit = async () => {
-		if (!gender || !fullName || !email || !mobile || !acceptTerms || !isVerified) {
+		if (!gender || !fullName || !email || !acceptTerms || !isVerified) {
+			return;
+		}
+
+		// Additional validation for the password stage
+		if (showPasswordFields && (!password || !passwordStrong || !passwordsMatch)) {
+			alert('Please ensure password is at least 8 characters and both passwords match');
 			return;
 		}
 
@@ -85,12 +96,17 @@
 				fullName,
 				email,
 				mobile,
+				password,
 				whatsappUpdates
 			});
 		} catch (error) {
 			console.error('Error submitting form:', error);
 			alert('Failed to submit your information. Please try again.');
 		}
+	};
+	
+	const switchToLogin = () => {
+		dispatch('switchForm', { action: 'login' });
 	};
 </script>
 
@@ -119,124 +135,139 @@
 		</div>
 	</div>
 
-	<form class="space-y-4">
-		<!-- Gender -->
-		<div class="mb-4 flex gap-4">
-			<label class="flex flex-1 items-center">
-				<input
-					type="radio"
-					bind:group={gender}
-					value="male"
-					class="form-radio h-4 w-4 text-blue-600"
-				/>
-				<span class="ml-2">Male</span>
-			</label>
-			<label class="flex flex-1 items-center">
-				<input
-					type="radio"
-					bind:group={gender}
-					value="female"
-					class="form-radio h-4 w-4 text-blue-600"
-				/>
-				<span class="ml-2">Female</span>
-			</label>
-		</div>
+	<form class="space-y-4" on:submit|preventDefault={handleSubmit}>
+		{#if !showPasswordFields}
+			<!-- Registration form - first stage -->
+			<!-- Gender -->
+			<div class="mb-4 flex gap-4">
+				<label class="flex flex-1 items-center">
+					<input
+						type="radio"
+						bind:group={gender}
+						value="M"
+						class="form-radio h-4 w-4 text-blue-600"
+					/>
+					<span class="ml-2">Male</span>
+				</label>
+				<label class="flex flex-1 items-center">
+					<input
+						type="radio"
+						bind:group={gender}
+						value="F"
+						class="form-radio h-4 w-4 text-blue-600"
+					/>
+					<span class="ml-2">Female</span>
+				</label>
+			</div>
 
-		<!-- Full Name -->
-		<div>
-			<input
-				type="text"
-				bind:value={fullName}
-				placeholder="Full Name (as per bank records)"
-				class="w-full rounded-md border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
-				required
-			/>
-		</div>
-
-		<!-- Email -->
-		<div>
-			<input
-				type="email"
-				bind:value={email}
-				placeholder="Email Address"
-				class="w-full rounded-md border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
-				required
-			/>
-		</div>
-
-		<!-- Mobile -->
-		<div>
-			<div class="relative">
+			<!-- Full Name -->
+			<div>
 				<input
-					type="tel"
-					bind:value={mobile}
-					placeholder="Mobile Number"
-					maxlength="10"
-					class="w-full rounded-md border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 {!isValidMobile(
-						mobile
-					) && mobile.length > 0
-						? 'border-red-500'
-						: ''}"
+					type="text"
+					bind:value={fullName}
+					placeholder="Full Name (as per bank records)"
+					class="w-full rounded-md border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
 					required
 				/>
-				<span
-					class="absolute right-3 top-1/2 -translate-y-1/2 text-xs {mobileDigits === 10 &&
-					isValidMobile(mobile)
-						? 'text-green-500'
-						: 'text-gray-400'}"
-				>
-					{mobileDigits}/10
-				</span>
 			</div>
-			{#if mobile.length > 0 && !isValidMobile(mobile)}
-				<p class="mt-1 text-xs text-red-500">Please enter a valid Indian mobile number</p>
-			{:else}
-				<p class="mt-1 text-xs text-gray-500">Bank will contact you on this number</p>
-			{/if}
-		</div>
 
-		<!-- Verification Method Toggle -->
-		<div class="flex items-center justify-between text-sm">
-			<span>Verify using:</span>
-			<button
-				type="button"
-				on:click={toggleVerificationMethod}
-				class="text-blue-600 hover:underline"
-			>
-				Switch to {verificationMethod === 'mobile' ? 'Email' : 'Mobile'} OTP
-			</button>
-		</div>
-
-		<!-- OTP Section -->
-		{#if !isVerified}
-			<div class="space-y-3">
-				{#if !otpSent}
-					<button
-						type="button"
-						on:click={sendOTP}
-						disabled={verificationMethod === 'mobile' ? mobile.length !== 10 : !email.includes('@')}
-						class="w-full rounded-md bg-blue-600 py-2 text-sm text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
-					>
-						Send OTP to {verificationMethod === 'mobile' ? 'Mobile' : 'Email'}
-					</button>
+			<!-- Email -->
+			<div>
+				<input
+					type="email"
+					bind:value={email}
+					placeholder="Email Address"
+					class="w-full rounded-md border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 {!isValidEmail(email) && email ? 'border-red-500' : ''}"
+					required
+				/>
+				{#if email && !isValidEmail(email)}
+					<p class="mt-1 text-xs text-red-500">Please enter a valid email address</p>
 				{:else}
-					<div class="space-y-2">
-						<input
-							type="text"
-							bind:value={otp}
-							placeholder="Enter 6-digit OTP"
-							maxlength="6"
-							class="w-full rounded-md border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
-						/>
-						<div class="flex justify-between text-xs">
-							<button type="button" on:click={sendOTP} class="text-blue-600 hover:underline">
-								Resend OTP
-							</button>
-							<button type="button" on:click={verifyOTP} class="text-blue-600 hover:underline">
-								Verify OTP
-							</button>
+					<p class="mt-1 text-xs text-gray-500">We'll send an OTP to verify this email</p>
+				{/if}
+			</div>
+
+			<!-- Mobile -->
+			<div>
+				<div class="relative">
+					<input
+						type="tel"
+						bind:value={mobile}
+						on:input={handleMobileInput}
+						placeholder="Mobile Number"
+						maxlength="10"
+						class="w-full rounded-md border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 {!isValidMobile(mobile) && mobile ? 'border-red-500' : ''}"
+						required
+					/>
+					<span
+						class="absolute right-3 top-1/2 -translate-y-1/2 text-xs {mobileDigits === 10 && isValidMobile(mobile) ? 'text-green-500' : 'text-gray-400'}"
+					>
+						{mobileDigits}/10
+					</span>
+				</div>
+				<p class="mt-1 text-xs text-gray-500">Required for account security</p>
+			</div>
+
+			<!-- OTP Section -->
+			{#if !isVerified}
+				<div class="space-y-3">
+					{#if !otpSent}
+						<button
+							type="button"
+							on:click={sendOTP}
+							disabled={!isValidEmail(email)}
+							class="w-full rounded-md bg-blue-600 py-2 text-sm text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+						>
+							Send OTP to Email
+						</button>
+					{:else}
+						<div class="space-y-2">
+							<input
+								type="text"
+								bind:value={otp}
+								placeholder="Enter 6-digit OTP"
+								maxlength="6"
+								class="w-full rounded-md border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+							/>
+							<div class="flex justify-between text-xs">
+								<button type="button" on:click={sendOTP} class="text-blue-600 hover:underline">
+									Resend OTP
+								</button>
+								<button type="button" on:click={verifyOTP} class="text-blue-600 hover:underline">
+									Verify OTP
+								</button>
+							</div>
 						</div>
-					</div>
+					{/if}
+				</div>
+			{/if}
+		{:else}
+			<!-- Password stage - after email verification -->
+			<!-- Password -->
+			<div>
+				<input
+					type="password"
+					bind:value={password}
+					placeholder="Create Password (min. 8 characters)"
+					class="w-full rounded-md border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 {password && !passwordStrong ? 'border-red-500' : ''}"
+					required
+				/>
+				{#if password && !passwordStrong}
+					<p class="mt-1 text-xs text-red-500">Password must be at least 8 characters</p>
+				{/if}
+			</div>
+
+			<!-- Confirm Password -->
+			<div>
+				<input
+					type="password"
+					bind:value={confirmPassword}
+					placeholder="Confirm Password"
+					class="w-full rounded-md border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 {confirmPassword && !passwordsMatch ? 'border-red-500' : ''}"
+					required
+				/>
+				{#if confirmPassword && !passwordsMatch}
+					<p class="mt-1 text-xs text-red-500">Passwords do not match</p>
 				{/if}
 			</div>
 		{/if}
@@ -272,12 +303,27 @@
 
 		<button
 			type="submit"
-			disabled={!gender || !fullName || !email || !mobile || !acceptTerms || !isVerified}
+			disabled={showPasswordFields 
+				? (!gender || !fullName || !email || !acceptTerms || !isVerified || !password || !passwordStrong || !passwordsMatch) 
+				: (!gender || !fullName || !email || !acceptTerms || !isVerified)}
 			class="w-full rounded-md bg-blue-600 py-3 font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
 		>
 			Get Free Credit Report
 		</button>
 	</form>
+
+	<div class="mt-4 text-center">
+		<p class="text-sm text-gray-600">
+			Already registered? 
+			<button 
+				type="button" 
+				on:click={switchToLogin}
+				class="text-blue-600 hover:underline"
+			>
+				Login here
+			</button>
+		</p>
+	</div>
 
 	<div class="mt-4 flex items-center justify-center text-xs text-gray-500">
 		<svg class="mr-1 h-4 w-4" viewBox="0 0 20 20" fill="currentColor">

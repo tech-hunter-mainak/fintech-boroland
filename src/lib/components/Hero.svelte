@@ -1,5 +1,5 @@
 <div
-	class="mx-auto w-10/12 grid-cols-2 items-center overflow-x-hidden md:py-14 lg:mt-3 lg:grid lg:py-24 xl:mt-5 xl:py-14"
+	class="mx-auto w-10/12 grid-cols-2 items-center overflow-x-hidden md:py-14 lg:grid lg:py-24 xl:py-14"
 	data-aos="fade-right"
 	data-aos-duration="800"
 >
