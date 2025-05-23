@@ -11,7 +11,7 @@ declare global {
 		interface PageState {}
 		interface Platform {}
 		interface User {
-			id: string;            // Auth user ID
+			id: string; // Auth user ID
 			email: string;
 			mobile: string;
 			fullName: string;
@@ -19,7 +19,7 @@ declare global {
 			whatsappUpdates: boolean;
 			isVerified: boolean;
 			createdAt: string;
-			hasDetailedInfo?: boolean;   // Flag to indicate if detailed info is submitted
+			hasDetailedInfo?: boolean; // Flag to indicate if detailed info is submitted
 			// Additional fields from user_details may be included
 			age?: number;
 			maritalStatus?: string;

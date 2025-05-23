@@ -3,20 +3,20 @@
 	import { onMount } from 'svelte';
 	import { Footer, Navbar } from '$lib/components';
 	import '../app.css';
-	
+
 	// Track if we're on dashboard page
 	$: isDashboard = $page.url.pathname === '/dashboard';
 	let isLargeScreen = true;
-	
+
 	onMount(() => {
 		// Check screen size on mount and update
 		const checkScreenSize = () => {
 			isLargeScreen = window.innerWidth >= 1024;
 		};
-		
+
 		checkScreenSize();
 		window.addEventListener('resize', checkScreenSize);
-		
+
 		return () => {
 			window.removeEventListener('resize', checkScreenSize);
 		};

@@ -100,10 +100,10 @@
 					action: 'logout'
 				})
 			});
-			
+
 			// Clear client-side storage
 			userSession.logout();
-			
+
 			// Navigate to home page with a reload to ensure fresh state
 			window.location.href = '/';
 		} catch (error) {
@@ -114,40 +114,43 @@
 	const handleNavigation = (itemId: string) => {
 		currentView = itemId;
 	};
-	
+
 	// Handle menu item clicks from the navbar
 	const handleNavbarMenuClick = (event: Event) => {
 		// Cast to CustomEvent with the right type
-		const customEvent = event as CustomEvent<{itemId: string}>;
+		const customEvent = event as CustomEvent<{ itemId: string }>;
 		const { itemId } = customEvent.detail;
 		handleNavigation(itemId);
 	};
-	
+
 	// Check screen size
 	const checkScreenSize = () => {
 		if (browser) {
 			isSmallScreen = window.innerWidth < 1024;
 		}
 	};
-	
+
 	onMount(() => {
 		// Listen for events from navbar
 		window.addEventListener('dashboard-menu-item-click', handleNavbarMenuClick as EventListener);
-		
+
 		// Add resize listener to detect screen size changes
 		checkScreenSize();
 		window.addEventListener('resize', checkScreenSize);
-		
+
 		// Simulate loading
 		setTimeout(() => {
 			isLoading = false;
 		}, 1000);
 	});
-	
+
 	onDestroy(() => {
 		// Clean up event listeners
 		if (browser) {
-			window.removeEventListener('dashboard-menu-item-click', handleNavbarMenuClick as EventListener);
+			window.removeEventListener(
+				'dashboard-menu-item-click',
+				handleNavbarMenuClick as EventListener
+			);
 			window.removeEventListener('resize', checkScreenSize);
 		}
 	});
@@ -155,7 +158,7 @@
 
 <div class="min-h-screen bg-gray-100">
 	<!-- Sidebar and Main Content -->
-	<div class="container mx-auto px-6 py-8 mt-[1.5rem] lg:mt-0">
+	<div class="container mx-auto mt-[1.5rem] px-6 py-8 lg:mt-0">
 		<div class="-mx-4 flex flex-wrap">
 			<!-- Sidebar - hide on small screens -->
 			{#if !isSmallScreen}
@@ -167,7 +170,7 @@
 						<div class="mb-6 text-center">
 							<h1 class="text-2xl font-bold text-blue-600">Boroland</h1>
 						</div>
-						
+
 						<ul class="space-y-4">
 							{#each sidebarItems as item}
 								<li>
@@ -201,19 +204,14 @@
 									</button>
 								</li>
 							{/each}
-							
+
 							<!-- Add logout button at the bottom of sidebar -->
 							<li class="mt-8 border-t pt-4">
 								<button
 									on:click={handleLogout}
 									class="flex w-full transform items-center text-red-500 transition-all duration-300 ease-in-out hover:translate-x-2 hover:text-red-600"
 								>
-									<svg
-										class="mr-3 h-5 w-5"
-										fill="none"
-										stroke="currentColor"
-										viewBox="0 0 24 24"
-									>
+									<svg class="mr-3 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 										<path
 											stroke-linecap="round"
 											stroke-linejoin="round"
@@ -248,24 +246,24 @@
 						class="mb-8 transform rounded-lg bg-white p-8 shadow-md transition-all duration-300 ease-in-out hover:-translate-y-1 hover:shadow-lg"
 					>
 						<div class="mb-8">
-							<h2 class="mb-4 text-2xl font-bold text-center">Hey {userName}!</h2>
+							<h2 class="mb-4 text-center text-2xl font-bold">Hey {userName}!</h2>
 							<div class="mt-6 grid grid-cols-1 gap-8 md:grid-cols-3">
 								<!-- Replace Credit Score Circle with better display -->
 								<div class="text-center">
 									<div class="relative mx-auto mb-4 rounded-lg bg-gray-50 p-4 shadow-inner">
-										<div 
-											class="flex flex-col items-center justify-center"
-											style="height: 150px;">
-											<div class="text-5xl font-bold tracking-tight" 
-												style="color: {getScoreColor()}">
+										<div class="flex flex-col items-center justify-center" style="height: 150px;">
+											<div
+												class="text-5xl font-bold tracking-tight"
+												style="color: {getScoreColor()}"
+											>
 												{getScoreValue()}%
 											</div>
 											<div class="mt-2 text-sm text-gray-500">Credit Score</div>
 											<div class="mt-4 h-2 w-full rounded-full bg-gray-200">
-												<div 
-													class="h-2 rounded-full" 
-													style="width: {getScoreValue()}%; background-color: {getScoreColor()}">
-												</div>
+												<div
+													class="h-2 rounded-full"
+													style="width: {getScoreValue()}%; background-color: {getScoreColor()}"
+												></div>
 											</div>
 										</div>
 									</div>
@@ -276,7 +274,9 @@
 									<div>
 										<h3 class="mb-1 text-sm text-gray-500">Status</h3>
 										<p
-											class="text-lg font-semibold {isUserSelected() ? 'text-green-600' : 'text-red-600'}"
+											class="text-lg font-semibold {isUserSelected()
+												? 'text-green-600'
+												: 'text-red-600'}"
 										>
 											{isUserSelected() ? 'Approved' : 'Not Approved'}
 										</p>
@@ -305,7 +305,8 @@
 								<p class="mt-4 text-gray-600">{creditData.reason}</p>
 							{:else if getScoreValue() > 0}
 								<p class="mt-4 text-gray-600">
-									Based on our AI assessment, you have a {getScoreValue()}% match with successful credit profiles.
+									Based on our AI assessment, you have a {getScoreValue()}% match with successful
+									credit profiles.
 								</p>
 							{:else}
 								<p class="text-gray-600">
@@ -336,7 +337,11 @@
 									<div class="space-y-4">
 										<div class="flex items-center justify-between">
 											<span class="text-gray-600">Monthly Income</span>
-											<span class="font-semibold">₹{userData.monthly_family_income || userData.monthlyFamilyIncome || 0}</span>
+											<span class="font-semibold"
+												>₹{userData.monthly_family_income ||
+													userData.monthlyFamilyIncome ||
+													0}</span
+											>
 										</div>
 										<div class="flex items-center justify-between">
 											<span class="text-gray-600">Education</span>
@@ -344,17 +349,25 @@
 										</div>
 										<div class="flex items-center justify-between">
 											<span class="text-gray-600">Skills</span>
-											<span class="font-semibold">{userData.skill_1 || (userData.skills?.[0]?.skill) || 'N/A'}</span>
+											<span class="font-semibold"
+												>{userData.skill_1 || userData.skills?.[0]?.skill || 'N/A'}</span
+											>
 										</div>
 									</div>
 									<div class="space-y-4">
 										<div class="flex items-center justify-between">
 											<span class="text-gray-600">Monthly Expenses</span>
-											<span class="font-semibold">₹{userData.monthly_family_expenditure || userData.monthlyFamilyExpenditure || 0}</span>
+											<span class="font-semibold"
+												>₹{userData.monthly_family_expenditure ||
+													userData.monthlyFamilyExpenditure ||
+													0}</span
+											>
 										</div>
 										<div class="flex items-center justify-between">
 											<span class="text-gray-600">Certifications</span>
-											<span class="font-semibold">{userData.has_certification || userData.hasCertification || 'No'}</span>
+											<span class="font-semibold"
+												>{userData.has_certification || userData.hasCertification || 'No'}</span
+											>
 										</div>
 										<div class="flex items-center justify-between">
 											<span class="text-gray-600">Assets</span>

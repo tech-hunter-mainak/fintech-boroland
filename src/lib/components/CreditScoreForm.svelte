@@ -104,7 +104,7 @@
 			alert('Failed to submit your information. Please try again.');
 		}
 	};
-	
+
 	const switchToLogin = () => {
 		dispatch('switchForm', { action: 'login' });
 	};
@@ -177,7 +177,11 @@
 					type="email"
 					bind:value={email}
 					placeholder="Email Address"
-					class="w-full rounded-md border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 {!isValidEmail(email) && email ? 'border-red-500' : ''}"
+					class="w-full rounded-md border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 {!isValidEmail(
+						email
+					) && email
+						? 'border-red-500'
+						: ''}"
 					required
 				/>
 				{#if email && !isValidEmail(email)}
@@ -196,11 +200,18 @@
 						on:input={handleMobileInput}
 						placeholder="Mobile Number"
 						maxlength="10"
-						class="w-full rounded-md border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 {!isValidMobile(mobile) && mobile ? 'border-red-500' : ''}"
+						class="w-full rounded-md border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 {!isValidMobile(
+							mobile
+						) && mobile
+							? 'border-red-500'
+							: ''}"
 						required
 					/>
 					<span
-						class="absolute right-3 top-1/2 -translate-y-1/2 text-xs {mobileDigits === 10 && isValidMobile(mobile) ? 'text-green-500' : 'text-gray-400'}"
+						class="absolute right-3 top-1/2 -translate-y-1/2 text-xs {mobileDigits === 10 &&
+						isValidMobile(mobile)
+							? 'text-green-500'
+							: 'text-gray-400'}"
 					>
 						{mobileDigits}/10
 					</span>
@@ -249,7 +260,10 @@
 					type="password"
 					bind:value={password}
 					placeholder="Create Password (min. 8 characters)"
-					class="w-full rounded-md border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 {password && !passwordStrong ? 'border-red-500' : ''}"
+					class="w-full rounded-md border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 {password &&
+					!passwordStrong
+						? 'border-red-500'
+						: ''}"
 					required
 				/>
 				{#if password && !passwordStrong}
@@ -263,7 +277,10 @@
 					type="password"
 					bind:value={confirmPassword}
 					placeholder="Confirm Password"
-					class="w-full rounded-md border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 {confirmPassword && !passwordsMatch ? 'border-red-500' : ''}"
+					class="w-full rounded-md border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 {confirmPassword &&
+					!passwordsMatch
+						? 'border-red-500'
+						: ''}"
 					required
 				/>
 				{#if confirmPassword && !passwordsMatch}
@@ -303,9 +320,16 @@
 
 		<button
 			type="submit"
-			disabled={showPasswordFields 
-				? (!gender || !fullName || !email || !acceptTerms || !isVerified || !password || !passwordStrong || !passwordsMatch) 
-				: (!gender || !fullName || !email || !acceptTerms || !isVerified)}
+			disabled={showPasswordFields
+				? !gender ||
+					!fullName ||
+					!email ||
+					!acceptTerms ||
+					!isVerified ||
+					!password ||
+					!passwordStrong ||
+					!passwordsMatch
+				: !gender || !fullName || !email || !acceptTerms || !isVerified}
 			class="w-full rounded-md bg-blue-600 py-3 font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
 		>
 			Get Free Credit Report
@@ -314,12 +338,8 @@
 
 	<div class="mt-4 text-center">
 		<p class="text-sm text-gray-600">
-			Already registered? 
-			<button 
-				type="button" 
-				on:click={switchToLogin}
-				class="text-blue-600 hover:underline"
-			>
+			Already registered?
+			<button type="button" on:click={switchToLogin} class="text-blue-600 hover:underline">
 				Login here
 			</button>
 		</p>

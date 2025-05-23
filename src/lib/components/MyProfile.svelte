@@ -11,7 +11,7 @@
 				year: today.getFullYear()
 			};
 		}
-		
+
 		const date = new Date(dateString);
 		return {
 			day: date.getDate().toString().padStart(2, '0'),
@@ -19,12 +19,12 @@
 			year: date.getFullYear()
 		};
 	};
-	
+
 	function getFullName(): string {
 		// Use database field name first, then fallbacks
 		return userData?.full_name || userData?.name || userData?.fullName || 'Not provided';
 	}
-	
+
 	function getAnnualIncome(): string {
 		// Calculate annual income from monthly income, with proper field names
 		const monthlyIncome = userData?.monthly_family_income || userData?.monthlyFamilyIncome || 0;
@@ -65,7 +65,9 @@
 				<div>
 					<label class="mb-1 block text-sm text-gray-600">YOUR NAME</label>
 					<div class="flex gap-2">
-						<span class="text-gray-800">{userData?.gender === 'M' || userData?.gender === 'Male' ? 'Mr' : 'Ms'}</span>
+						<span class="text-gray-800"
+							>{userData?.gender === 'M' || userData?.gender === 'Male' ? 'Mr' : 'Ms'}</span
+						>
 						<span class="text-gray-800">{getFullName()}</span>
 					</div>
 				</div>
@@ -93,8 +95,8 @@
 				<div>
 					<label class="mb-1 block text-sm text-gray-600">MARITAL STATUS</label>
 					<span class="text-gray-800">
-						{userData?.marital_status === 'Y' || userData?.maritalStatus === 'Y' 
-							? 'Married' 
+						{userData?.marital_status === 'Y' || userData?.maritalStatus === 'Y'
+							? 'Married'
 							: userData?.marital_status === 'N' || userData?.maritalStatus === 'N'
 								? 'Single'
 								: 'Not provided'}
@@ -103,7 +105,9 @@
 
 				<div>
 					<label class="mb-1 block text-sm text-gray-600">FAMILY MEMBERS</label>
-					<span class="text-gray-800">{userData?.family_members || userData?.familyMembers || 'Not provided'}</span>
+					<span class="text-gray-800"
+						>{userData?.family_members || userData?.familyMembers || 'Not provided'}</span
+					>
 				</div>
 			</div>
 		</div>
@@ -131,15 +135,15 @@
 				<div>
 					<label class="mb-1 block text-sm text-gray-600">PRIMARY SKILL</label>
 					<span class="text-gray-800">
-						{userData?.skill_1 || (userData?.skills?.[0]?.skill) || 'Not provided'}
+						{userData?.skill_1 || userData?.skills?.[0]?.skill || 'Not provided'}
 					</span>
 				</div>
 
 				<div>
 					<label class="mb-1 block text-sm text-gray-600">PRIMARY EARNER</label>
 					<span class="text-gray-800">
-						{userData?.is_primary_earner === 'Y' || userData?.isPrimaryEarner === 'Y' 
-							? 'Yes' 
+						{userData?.is_primary_earner === 'Y' || userData?.isPrimaryEarner === 'Y'
+							? 'Yes'
 							: userData?.is_primary_earner === 'N' || userData?.isPrimaryEarner === 'N'
 								? 'No'
 								: 'Not provided'}
@@ -149,9 +153,9 @@
 				<div>
 					<label class="mb-1 block text-sm text-gray-600">MONTHLY INCOME</label>
 					<span class="text-gray-800">
-						₹{userData?.monthly_family_income?.toLocaleString('en-IN') || 
-						userData?.monthlyFamilyIncome?.toLocaleString('en-IN') || 
-						'Not provided'}
+						₹{userData?.monthly_family_income?.toLocaleString('en-IN') ||
+							userData?.monthlyFamilyIncome?.toLocaleString('en-IN') ||
+							'Not provided'}
 					</span>
 				</div>
 

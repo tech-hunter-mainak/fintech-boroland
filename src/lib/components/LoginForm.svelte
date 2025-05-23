@@ -11,7 +11,7 @@
 	let showValidationError: boolean = false;
 	let validationMessage: string = '';
 	let isLoggingIn: boolean = false;
-	
+
 	// Handle login errors from parent component
 	const handleLoginError = (event: Event) => {
 		isLoggingIn = false;
@@ -19,22 +19,22 @@
 		validationMessage = customEvent.detail?.message || 'Login failed';
 		showValidationError = true;
 	};
-	
+
 	onMount(() => {
 		// Listen for login errors from parent component
 		document.addEventListener('login-error', handleLoginError as EventListener);
 	});
-	
+
 	onDestroy(() => {
 		// Clean up event listener
 		document.removeEventListener('login-error', handleLoginError as EventListener);
 	});
-	
+
 	// Determine if the identifier is an email or mobile
 	$: isEmail = identifier.includes('@');
 	$: isMobile = /^[6-9]\d{9}$/.test(identifier);
 	$: isValidIdentifier = isEmail || isMobile;
-	
+
 	// Format the mobile number while typing
 	const handleIdentifierInput = () => {
 		// If it starts with numbers and doesn't have @ symbol, assume it's a mobile number
@@ -61,20 +61,20 @@
 			showValidationError = false;
 		}
 	};
-	
+
 	const handleLogin = async () => {
 		if (!isValidIdentifier) {
 			validationMessage = 'Please enter a valid email address or mobile number';
 			showValidationError = true;
 			return;
 		}
-		
+
 		if (!password) {
 			validationMessage = 'Please enter your password';
 			showValidationError = true;
 			return;
 		}
-		
+
 		showValidationError = false;
 		isLoggingIn = true;
 
@@ -86,18 +86,18 @@
 			isLoggingIn = false;
 		}
 	};
-	
+
 	const handleResetPassword = async () => {
 		if (!resetEmail.includes('@')) {
 			alert('Please enter a valid email address');
 			return;
 		}
-		
+
 		// In a real app, make API call to send password reset email
 		alert(`Password reset link sent to ${resetEmail}`);
 		forgotPassword = false;
 	};
-	
+
 	const switchToRegister = () => {
 		dispatch('switchForm', { action: 'register' });
 	};
@@ -118,7 +118,9 @@
 					bind:value={identifier}
 					on:input={handleIdentifierInput}
 					placeholder="Email Address or Mobile Number"
-					class="w-full rounded-md border {showValidationError ? 'border-red-500' : 'border-gray-300'} px-4 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+					class="w-full rounded-md border {showValidationError
+						? 'border-red-500'
+						: 'border-gray-300'} px-4 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
 					required
 				/>
 				{#if showValidationError}
@@ -142,7 +144,9 @@
 					type="password"
 					bind:value={password}
 					placeholder="Password"
-					class="w-full rounded-md border {!password && showValidationError ? 'border-red-500' : 'border-gray-300'} px-4 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+					class="w-full rounded-md border {!password && showValidationError
+						? 'border-red-500'
+						: 'border-gray-300'} px-4 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
 					required
 				/>
 				<div class="mt-1 flex justify-between text-xs">
@@ -150,9 +154,9 @@
 						<input type="checkbox" bind:checked={rememberMe} class="form-checkbox text-blue-600" />
 						<span class="ml-1 text-gray-600">Remember me</span>
 					</label>
-					<button 
-						type="button" 
-						on:click={() => forgotPassword = true}
+					<button
+						type="button"
+						on:click={() => (forgotPassword = true)}
 						class="text-blue-600 hover:underline"
 					>
 						Forgot password?
@@ -163,7 +167,7 @@
 			<button
 				type="submit"
 				class="w-full rounded-md bg-blue-600 py-3 font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
-				disabled={isLoggingIn || (!isValidIdentifier || !password)}
+				disabled={isLoggingIn || !isValidIdentifier || !password}
 			>
 				{isLoggingIn ? 'Logging in...' : 'Login'}
 			</button>
@@ -172,8 +176,10 @@
 		<!-- Password Reset Form -->
 		<form class="space-y-4" on:submit|preventDefault={handleResetPassword}>
 			<h3 class="text-lg font-medium text-gray-700">Reset Password</h3>
-			<p class="text-sm text-gray-600">Enter your email address below to receive a password reset link.</p>
-			
+			<p class="text-sm text-gray-600">
+				Enter your email address below to receive a password reset link.
+			</p>
+
 			<div>
 				<input
 					type="email"
@@ -183,7 +189,7 @@
 					required
 				/>
 			</div>
-			
+
 			<div class="flex space-x-2">
 				<button
 					type="submit"
@@ -193,7 +199,7 @@
 				</button>
 				<button
 					type="button"
-					on:click={() => forgotPassword = false}
+					on:click={() => (forgotPassword = false)}
 					class="flex-1 rounded-md border border-gray-300 py-2 font-medium text-gray-700 transition-colors hover:bg-gray-50"
 				>
 					Cancel
@@ -204,12 +210,8 @@
 
 	<div class="mt-4 text-center">
 		<p class="text-sm text-gray-600">
-			New user? 
-			<button 
-				type="button" 
-				on:click={switchToRegister}
-				class="text-blue-600 hover:underline"
-			>
+			New user?
+			<button type="button" on:click={switchToRegister} class="text-blue-600 hover:underline">
 				Register here
 			</button>
 		</p>
@@ -225,4 +227,4 @@
 		</svg>
 		Your information is 100% secure with us
 	</div>
-</div> 
+</div>

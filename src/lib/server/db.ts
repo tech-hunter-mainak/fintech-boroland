@@ -40,17 +40,17 @@ export async function createAuthUser(authData: {
 			.select('id, email')
 			.eq('email', authData.email)
 			.maybeSingle();
-			
+
 		if (existingEmail) {
 			throw new Error('User with this email already exists');
 		}
-		
+
 		const { data: existingMobile } = await supabase
 			.from('auth_users')
 			.select('id, mobile')
 			.eq('mobile', authData.mobile)
 			.maybeSingle();
-			
+
 		if (existingMobile) {
 			throw new Error('User with this mobile number already exists');
 		}
@@ -78,7 +78,7 @@ export async function createAuthUser(authData: {
 			console.error('Supabase insert error:', error);
 			throw new Error(`Failed to create user: ${error.message}`);
 		}
-		
+
 		return newAuthUser;
 	} catch (error) {
 		console.error('Error creating auth user:', error);
@@ -87,15 +87,12 @@ export async function createAuthUser(authData: {
 }
 
 // Verify user credentials and return user if valid
-export async function verifyUserCredentials(credentials: {
-	identifier: string;
-	password: string;
-}) {
+export async function verifyUserCredentials(credentials: { identifier: string; password: string }) {
 	try {
 		// Check if identifier is email or mobile
 		const isEmail = credentials.identifier.includes('@');
 		const field = isEmail ? 'email' : 'mobile';
-		
+
 		console.log(`Attempting login with ${field}: ${credentials.identifier}`);
 
 		// Get user from auth_users table
@@ -109,22 +106,22 @@ export async function verifyUserCredentials(credentials: {
 			console.error(`Error fetching user by ${field}:`, error);
 			return null;
 		}
-		
+
 		if (!user) {
 			console.log(`No user found with ${field}: ${credentials.identifier}`);
 			return null;
 		}
-		
+
 		console.log(`User found with ${field}: ${credentials.identifier}`);
 
 		// Verify password
 		const isPasswordValid = await bcrypt.compare(credentials.password, user.password_hash);
-		
+
 		if (!isPasswordValid) {
 			console.log(`Invalid password for ${field}: ${credentials.identifier}`);
 			return null;
 		}
-		
+
 		console.log(`Password validated for ${field}: ${credentials.identifier}`);
 
 		// Get user details
@@ -133,11 +130,11 @@ export async function verifyUserCredentials(credentials: {
 			.select('*')
 			.eq('auth_user_id', user.id)
 			.maybeSingle();
-			
+
 		if (detailsError) {
 			console.error('Error fetching user details:', detailsError);
 		}
-		
+
 		console.log('Login successful, returning user data');
 
 		return {
@@ -244,7 +241,7 @@ export async function upsertUser(userData: any) {
 		if (!userData.auth_user_id) {
 			throw new Error('Missing auth_user_id in userData');
 		}
-		
+
 		// Delegate to the detailed upsert function
 		const result = await upsertUserDetails(userData.auth_user_id, userData);
 		return result;
@@ -273,15 +270,15 @@ export async function getUserByEmailOrMobile(email: string, mobile: string) {
 		const { data, error } = await query.maybeSingle();
 
 		if (error && error.code !== 'PGRST116') throw error; // PGRST116 is "no rows returned" error
-		
+
 		if (!data) return null;
-		
+
 		// Format the response to flatten the structure
 		return {
 			id: data.id,
 			email: data.email,
 			mobile: data.mobile,
-			...(data.user_details || {}),
+			...(data.user_details || {})
 		};
 	} catch (error) {
 		console.error('Error getting user:', error);
@@ -290,19 +287,23 @@ export async function getUserByEmailOrMobile(email: string, mobile: string) {
 }
 
 // Update user selection status
-export async function updateUserSelection(userId: string, isSelected: boolean, predictionPercentage?: number) {
+export async function updateUserSelection(
+	userId: string,
+	isSelected: boolean,
+	predictionPercentage?: number
+) {
 	try {
 		// Build update object with required fields
-		const updateData: any = { 
-			is_selected: isSelected, 
-			updated_at: new Date().toISOString() 
+		const updateData: any = {
+			is_selected: isSelected,
+			updated_at: new Date().toISOString()
 		};
-		
+
 		// Add prediction percentage if provided
 		if (predictionPercentage !== undefined) {
 			updateData.prediction_percentage = predictionPercentage;
 		}
-		
+
 		const { data, error } = await supabase
 			.from('user_details')
 			.update(updateData)
@@ -326,20 +327,22 @@ export async function hasSubmittedDetailedInfo(authUserId: string): Promise<bool
 			.select('age, marital_status, family_members')
 			.eq('auth_user_id', authUserId)
 			.maybeSingle();
-			
+
 		if (error) {
 			console.error('Error checking detailed info:', error);
 			return false;
 		}
-		
+
 		// If we have data and essential fields are filled, consider it complete
-		return !!data && 
-			data.age !== null && 
-			data.age !== undefined && 
-			data.marital_status !== null && 
+		return (
+			!!data &&
+			data.age !== null &&
+			data.age !== undefined &&
+			data.marital_status !== null &&
 			data.marital_status !== undefined &&
 			data.family_members !== null &&
-			data.family_members !== undefined;
+			data.family_members !== undefined
+		);
 	} catch (error) {
 		console.error('Error checking if user submitted detailed info:', error);
 		return false;

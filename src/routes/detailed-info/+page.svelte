@@ -59,7 +59,7 @@
 
 		// Pre-fill some fields from existing user data
 		const parsedData = JSON.parse(userData);
-		
+
 		// Make sure to convert gender properly
 		if (parsedData.gender) {
 			if (parsedData.gender.toLowerCase() === 'male') {
@@ -85,7 +85,7 @@
 
 			// Combine basic info with detailed info
 			const completeUserData = {
-				authUserId: basicInfo.authUserId,  // This is the key link to auth_users table
+				authUserId: basicInfo.authUserId, // This is the key link to auth_users table
 				gender: formData.gender,
 				fullName: basicInfo.fullName,
 				age: parseInt(formData.age),
@@ -198,7 +198,7 @@
 							'Content-Type': 'application/json'
 						},
 						body: JSON.stringify({
-							userId: basicInfo.authUserId,  // Use auth user ID
+							userId: basicInfo.authUserId, // Use auth user ID
 							isSelected: creditResult.isSelected,
 							predictionPercentage: creditResult.score // Store the prediction percentage
 						})
@@ -210,12 +210,15 @@
 				}
 
 				// Set user session with complete data
-				userSession.login({
-					...savedUser,
-					id: basicInfo.authUserId, // Use auth user ID as the main ID
-					email: basicInfo.email,
-					mobile: basicInfo.mobile
-				}, creditResult);
+				userSession.login(
+					{
+						...savedUser,
+						id: basicInfo.authUserId, // Use auth user ID as the main ID
+						email: basicInfo.email,
+						mobile: basicInfo.mobile
+					},
+					creditResult
+				);
 
 				// After saving all data, call the server action to convert the temporary session to a full session
 				const sessionResponse = await fetch('?/submitDetails', {
@@ -225,7 +228,7 @@
 					},
 					body: JSON.stringify({ processed: true })
 				});
-				
+
 				const sessionResult = await sessionResponse.json();
 				console.log('Session update result:', sessionResult);
 

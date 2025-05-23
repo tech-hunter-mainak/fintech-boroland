@@ -84,4 +84,4 @@ After setting up your Supabase project and connecting it to your application, yo
 2. Login with the registered user
 3. Access protected resources
 
-If you encounter any issues, check your browser console and server logs for error messages. 
+If you encounter any issues, check your browser console and server logs for error messages.

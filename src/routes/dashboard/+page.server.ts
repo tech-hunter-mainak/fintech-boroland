@@ -7,15 +7,15 @@ export const load: PageServerLoad = async ({ locals }) => {
 	if (!locals.user) {
 		throw error(401, 'Unauthorized');
 	}
-	
+
 	try {
 		// Get complete user data from database
 		const userData = await getUserByEmailOrMobile(locals.user.email, '');
-		
+
 		if (!userData) {
 			throw error(404, 'User not found');
 		}
-		
+
 		// Return the user data to the page
 		return {
 			user: userData,
@@ -26,4 +26,4 @@ export const load: PageServerLoad = async ({ locals }) => {
 		console.error('Error loading user data:', err);
 		throw error(500, 'Error loading user data');
 	}
-} 
+};

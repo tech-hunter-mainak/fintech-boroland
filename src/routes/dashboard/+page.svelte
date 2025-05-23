@@ -21,7 +21,7 @@
 	onMount(() => {
 		console.log('Dashboard component mounted');
 		console.log('Server data:', data);
-		
+
 		if (browser) {
 			// Check for credit data in session storage
 			try {
@@ -32,7 +32,7 @@
 			} catch (e) {
 				console.error('Error reading credit data from session storage:', e);
 			}
-			
+
 			// If we have user data from the server, update the store
 			if (userData) {
 				console.log('Updating user session with server data');
@@ -43,11 +43,7 @@
 </script>
 
 {#if userData}
-	<Dashboard 
-		userName={userData.full_name || userData.email || 'User'} 
-		creditData={creditData} 
-		userData={userData} 
-	/>
+	<Dashboard userName={userData.full_name || userData.email || 'User'} {creditData} {userData} />
 {:else}
 	<div class="py-12 text-center">
 		<div class="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-b-2 border-blue-500"></div>

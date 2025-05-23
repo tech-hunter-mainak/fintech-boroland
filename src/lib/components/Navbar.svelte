@@ -2,11 +2,11 @@
 	import { page } from '$app/stores';
 	import { onMount } from 'svelte';
 	import { userSession } from '$lib/stores/userStore';
-	
+
 	let isMenuOpen = false;
 	let isDashboardRoute = false;
 	let isSmallScreen = false;
-	
+
 	// Dashboard sidebar items
 	const dashboardSidebarItems = [
 		{
@@ -53,17 +53,17 @@
 			icon: 'M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z'
 		}
 	];
-	
+
 	const toggleMenu = () => {
 		isMenuOpen = !isMenuOpen;
 	};
-	
+
 	// Check screen size and route
 	const checkScreenSizeAndRoute = () => {
 		isSmallScreen = window.innerWidth < 1024;
 		isDashboardRoute = $page.url.pathname === '/dashboard';
 	};
-	
+
 	// Handle logout
 	const handleLogout = async () => {
 		try {
@@ -77,35 +77,36 @@
 					action: 'logout'
 				})
 			});
-			
+
 			// Clear client-side storage
 			userSession.logout();
-			
+
 			// Navigate to home page with a reload to ensure fresh state
 			window.location.href = '/';
 		} catch (error) {
 			console.error('Error during logout:', error);
 		}
 	};
-	
+
 	onMount(() => {
 		checkScreenSizeAndRoute();
 		window.addEventListener('resize', checkScreenSizeAndRoute);
-		
+
 		// Cleanup
 		return () => {
 			window.removeEventListener('resize', checkScreenSizeAndRoute);
 		};
 	});
-	
+
 	// Page store subscription to detect route changes
 	$: isDashboardRoute = $page.url.pathname === '/dashboard';
 </script>
 
-<nav class="fixed top-0 left-0 w-full bg-white py-4 shadow-md dark:bg-gray-900 z-50">
+<nav class="fixed left-0 top-0 z-50 w-full bg-white py-4 shadow-md dark:bg-gray-900">
 	<div class="mx-auto flex max-w-screen-xl flex-wrap items-center justify-between px-4">
 		<a href="/" class="flex items-center">
-			<span class="self-center whitespace-nowrap text-xl font-semibold text-blue-700 dark:text-white"
+			<span
+				class="self-center whitespace-nowrap text-xl font-semibold text-blue-700 dark:text-white"
 				>Boroland</span
 			>
 		</a>
@@ -120,7 +121,7 @@
 				>
 					<span class="sr-only">Open main menu</span>
 					<svg
-						class={isMenuOpen ? "hidden h-6 w-6" : "h-6 w-6"}
+						class={isMenuOpen ? 'hidden h-6 w-6' : 'h-6 w-6'}
 						fill="currentColor"
 						viewBox="0 0 20 20"
 						xmlns="http://www.w3.org/2000/svg"
@@ -132,7 +133,7 @@
 						></path>
 					</svg>
 					<svg
-						class={isMenuOpen ? "h-6 w-6" : "hidden h-6 w-6"}
+						class={isMenuOpen ? 'h-6 w-6' : 'hidden h-6 w-6'}
 						fill="currentColor"
 						viewBox="0 0 20 20"
 						xmlns="http://www.w3.org/2000/svg"
@@ -163,7 +164,7 @@
 				>
 					<span class="sr-only">Open main menu</span>
 					<svg
-						class={isMenuOpen ? "hidden h-6 w-6" : "h-6 w-6"}
+						class={isMenuOpen ? 'hidden h-6 w-6' : 'h-6 w-6'}
 						fill="currentColor"
 						viewBox="0 0 20 20"
 						xmlns="http://www.w3.org/2000/svg"
@@ -175,7 +176,7 @@
 						></path>
 					</svg>
 					<svg
-						class={isMenuOpen ? "h-6 w-6" : "hidden h-6 w-6"}
+						class={isMenuOpen ? 'h-6 w-6' : 'hidden h-6 w-6'}
 						fill="currentColor"
 						viewBox="0 0 20 20"
 						xmlns="http://www.w3.org/2000/svg"
@@ -199,30 +200,27 @@
 				<ul class="mt-4 flex flex-col font-medium lg:mt-0 lg:hidden">
 					{#each dashboardSidebarItems as item}
 						<li>
-							<button 
+							<button
 								on:click={() => {
 									// Close menu after clicking
 									isMenuOpen = false;
-									
+
 									// Navigate to the section by ID
 									const sectionElement = document.getElementById(item.id);
 									if (sectionElement) {
 										sectionElement.scrollIntoView({ behavior: 'smooth' });
 									}
-									
+
 									// Dispatch event for Dashboard component to handle
-									window.dispatchEvent(new CustomEvent('dashboard-menu-item-click', { 
-										detail: { itemId: item.id }
-									}));
+									window.dispatchEvent(
+										new CustomEvent('dashboard-menu-item-click', {
+											detail: { itemId: item.id }
+										})
+									);
 								}}
 								class="flex w-full items-center border-b border-gray-100 py-3 pl-3 pr-4 text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white"
 							>
-								<svg
-									class="mr-2 h-5 w-5"
-									fill="none"
-									stroke="currentColor"
-									viewBox="0 0 24 24"
-								>
+								<svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 									<path
 										stroke-linecap="round"
 										stroke-linejoin="round"
@@ -232,24 +230,21 @@
 								</svg>
 								<span>{item.text}</span>
 								{#if item.badge}
-									<span class="ml-2 rounded-full bg-red-100 px-2 py-1 text-xs text-red-600">{item.badge}</span>
+									<span class="ml-2 rounded-full bg-red-100 px-2 py-1 text-xs text-red-600"
+										>{item.badge}</span
+									>
 								{/if}
 							</button>
 						</li>
 					{/each}
-					
+
 					<!-- Logout Button -->
 					<li>
 						<button
 							on:click={handleLogout}
 							class="flex w-full items-center border-b border-gray-100 py-3 pl-3 pr-4 text-red-500 hover:bg-gray-50 dark:border-gray-700 dark:text-red-400 dark:hover:bg-gray-700"
 						>
-							<svg
-								class="mr-2 h-5 w-5"
-								fill="none"
-								stroke="currentColor"
-								viewBox="0 0 24 24"
-							>
+							<svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 								<path
 									stroke-linecap="round"
 									stroke-linejoin="round"

@@ -6,12 +6,12 @@ import { upsertUserDetails, updateUserSelection } from '$lib/server/db';
 export async function POST({ request }: RequestEvent) {
 	try {
 		const userData = await request.json();
-		
+
 		// Make sure we have the auth user ID
 		if (!userData.authUserId) {
 			return json({ error: 'Auth user ID is required' }, { status: 400 });
 		}
-		
+
 		// Save user details
 		const result = await upsertUserDetails(userData.authUserId, userData);
 		return json(result);
@@ -25,15 +25,15 @@ export async function POST({ request }: RequestEvent) {
 export async function PATCH({ request }: RequestEvent) {
 	try {
 		const { userId, isSelected, predictionPercentage } = await request.json();
-		
+
 		if (!userId) {
 			return json({ error: 'User ID is required' }, { status: 400 });
 		}
-		
+
 		const result = await updateUserSelection(userId, isSelected, predictionPercentage);
 		return json(result);
 	} catch (error) {
 		console.error('Error in PATCH /api/user-details:', error);
 		return json({ error: 'Failed to update user selection' }, { status: 500 });
 	}
-} 
+}
