@@ -76,8 +76,8 @@ const handleAuth: Handle = async ({ event, resolve }) => {
 
 	// Handle auth redirects
 	if (isProtectedRoute && !event.locals.user) {
-		console.log('[hooks] No user session, redirecting to home');
-		return redirect(307, '/');
+		console.log('[hooks] No user session, redirecting to auth');
+		return redirect(307, '/auth');
 	}
 
 	// For routes requiring detailed info, check if user has completed it

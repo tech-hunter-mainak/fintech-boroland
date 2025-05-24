@@ -29,7 +29,7 @@
 
 <div class="bg-white py-16">
 	<div class="container mx-auto px-6">
-		<div class="mb-12 flex items-center justify-between">
+		<div class="mb-12 flex flex-col items-center justify-between">
 			<h2 class="text-3xl font-bold">Community Success Stories</h2>
 			<div class="flex items-center">
 				<div class="flex">

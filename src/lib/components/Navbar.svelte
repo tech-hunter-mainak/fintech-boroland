@@ -2,6 +2,7 @@
 	import { page } from '$app/stores';
 	import { onMount } from 'svelte';
 	import { userSession } from '$lib/stores/userStore';
+	import { goto } from '$app/navigation';
 
 	let isMenuOpen = false;
 	let isDashboardRoute = false;
@@ -102,12 +103,10 @@
 	$: isDashboardRoute = $page.url.pathname === '/dashboard';
 </script>
 
-<nav class="fixed left-0 top-0 z-50 w-full bg-white py-4 shadow-md dark:bg-gray-900">
+<nav class="fixed left-0 top-0 z-50 w-full bg-white py-4 shadow-md">
 	<div class="mx-auto flex max-w-screen-xl flex-wrap items-center justify-between px-4">
 		<a href="/" class="flex items-center">
-			<span
-				class="self-center whitespace-nowrap text-xl font-semibold text-blue-700 dark:text-white"
-				>Boroland</span
+			<span class="self-center whitespace-nowrap text-xl font-semibold text-blue-700">Boroland</span
 			>
 		</a>
 		<div class="flex items-center lg:order-2">
@@ -115,7 +114,7 @@
 				<button
 					on:click={toggleMenu}
 					type="button"
-					class="ml-1 inline-flex items-center rounded-lg p-2 text-sm text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200 lg:hidden dark:text-gray-400 dark:hover:bg-gray-700 dark:focus:ring-gray-600"
+					class="ml-1 inline-flex items-center rounded-lg p-2 text-sm text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200 lg:hidden"
 					aria-controls="mobile-menu-2"
 					aria-expanded={isMenuOpen}
 				>
@@ -150,15 +149,17 @@
 					<span></span>
 				</div>
 
-				<a
-					href="/"
-					class="rounded-lg bg-blue-700 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-300 sm:mr-2 lg:mr-0 lg:px-5 lg:py-2.5 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
-					>Get Started</a
+				<button
+					on:click={() => {
+						goto('/dashboard');
+					}}
+					class=":bg-blue-600 rounded-lg bg-blue-700 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-300 sm:mr-2 lg:mr-0 lg:px-5 lg:py-2.5"
+					>Get Started</button
 				>
 				<button
 					on:click={toggleMenu}
 					type="button"
-					class="ml-1 inline-flex items-center rounded-lg p-2 text-sm text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200 lg:hidden dark:text-gray-400 dark:hover:bg-gray-700 dark:focus:ring-gray-600"
+					class="ml-1 inline-flex items-center rounded-lg p-2 text-sm text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200 lg:hidden"
 					aria-controls="mobile-menu-2"
 					aria-expanded={isMenuOpen}
 				>
@@ -218,7 +219,7 @@
 										})
 									);
 								}}
-								class="flex w-full items-center border-b border-gray-100 py-3 pl-3 pr-4 text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white"
+								class="flex w-full items-center border-b border-gray-100 py-3 pl-3 pr-4 text-gray-700 hover:bg-gray-50"
 							>
 								<svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 									<path
@@ -242,7 +243,7 @@
 					<li>
 						<button
 							on:click={handleLogout}
-							class="flex w-full items-center border-b border-gray-100 py-3 pl-3 pr-4 text-red-500 hover:bg-gray-50 dark:border-gray-700 dark:text-red-400 dark:hover:bg-gray-700"
+							class="flex w-full items-center border-b border-gray-100 py-3 pl-3 pr-4 text-red-500 hover:bg-gray-50"
 						>
 							<svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 								<path
@@ -262,42 +263,42 @@
 					<li>
 						<a
 							href="/"
-							class="block rounded bg-blue-700 py-2 pl-3 pr-4 text-white lg:bg-transparent lg:p-0 lg:text-blue-700 dark:text-white"
+							class="block rounded bg-blue-700 py-2 pl-3 pr-4 text-white lg:bg-transparent lg:p-0 lg:text-blue-700"
 							aria-current="page">Home</a
 						>
 					</li>
 					<li>
 						<a
 							href="/"
-							class="block border-b border-gray-100 py-2 pl-3 pr-4 text-gray-700 hover:bg-gray-50 lg:border-0 lg:p-0 lg:hover:bg-transparent lg:hover:text-blue-700 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white lg:dark:hover:bg-transparent lg:dark:hover:text-white"
+							class="block border-b border-gray-100 py-2 pl-3 pr-4 text-gray-700 hover:bg-gray-50 lg:border-0 lg:p-0 lg:hover:bg-transparent lg:hover:text-blue-700"
 							>Company</a
 						>
 					</li>
 					<li>
 						<a
 							href="/"
-							class="block border-b border-gray-100 py-2 pl-3 pr-4 text-gray-700 hover:bg-gray-50 lg:border-0 lg:p-0 lg:hover:bg-transparent lg:hover:text-blue-700 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white lg:dark:hover:bg-transparent lg:dark:hover:text-white"
+							class="block border-b border-gray-100 py-2 pl-3 pr-4 text-gray-700 hover:bg-gray-50 lg:border-0 lg:p-0 lg:hover:bg-transparent lg:hover:text-blue-700"
 							>Marketplace</a
 						>
 					</li>
 					<li>
 						<a
 							href="/"
-							class="block border-b border-gray-100 py-2 pl-3 pr-4 text-gray-700 hover:bg-gray-50 lg:border-0 lg:p-0 lg:hover:bg-transparent lg:hover:text-blue-700 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white lg:dark:hover:bg-transparent lg:dark:hover:text-white"
+							class="block border-b border-gray-100 py-2 pl-3 pr-4 text-gray-700 hover:bg-gray-50 lg:border-0 lg:p-0 lg:hover:bg-transparent lg:hover:text-blue-700"
 							>Features</a
 						>
 					</li>
 					<li>
 						<a
 							href="/"
-							class="block border-b border-gray-100 py-2 pl-3 pr-4 text-gray-700 hover:bg-gray-50 lg:border-0 lg:p-0 lg:hover:bg-transparent lg:hover:text-blue-700 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white lg:dark:hover:bg-transparent lg:dark:hover:text-white"
+							class="block border-b border-gray-100 py-2 pl-3 pr-4 text-gray-700 hover:bg-gray-50 lg:border-0 lg:p-0 lg:hover:bg-transparent lg:hover:text-blue-700"
 							>Team</a
 						>
 					</li>
 					<li>
 						<a
 							href="/"
-							class="block border-b border-gray-100 py-2 pl-3 pr-4 text-gray-700 hover:bg-gray-50 lg:border-0 lg:p-0 lg:hover:bg-transparent lg:hover:text-blue-700 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white lg:dark:hover:bg-transparent lg:dark:hover:text-white"
+							class="block border-b border-gray-100 py-2 pl-3 pr-4 text-gray-700 hover:bg-gray-50 lg:border-0 lg:p-0 lg:hover:bg-transparent lg:hover:text-blue-700"
 							>Contact</a
 						>
 					</li>

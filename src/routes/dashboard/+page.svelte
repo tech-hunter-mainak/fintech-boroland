@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import Dashboard from '$lib/components/Dashboard.svelte';
+	import { Dashboard } from '$lib/components';
 	import { userSession } from '$lib/stores/userStore';
 	import { browser } from '$app/environment';
 
