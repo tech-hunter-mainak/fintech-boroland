@@ -5,19 +5,19 @@
 
 	let userData: any = null;
 
-	// onMount(() => {
-	// 	const unsubscribe = userSession.subscribe((session) => {
-	// 		if (!session.isLoggedIn) {
-	// 			goto('/');
-	// 			return;
-	// 		}
-	// 		userData = session.user;
-	// 	});
+	onMount(() => {
+		const unsubscribe = userSession.subscribe((session) => {
+			if (!session.isLoggedIn) {
+				goto('/');
+				return;
+			}
+			userData = session.user;
+		});
 
-	// 	return () => {
-	// 		unsubscribe();
-	// 	};
-	// });
+		return () => {
+			unsubscribe();
+		};
+	});
 
 	const formatDate = (dateString: string) => {
 		const date = new Date(dateString);

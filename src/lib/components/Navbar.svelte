@@ -103,7 +103,7 @@
 	$: isDashboardRoute = $page.url.pathname === '/dashboard';
 </script>
 
-<nav class="fixed left-0 top-0 z-50 w-full bg-white py-4 shadow-md">
+<nav class="fixed left-0 top-0 z-50 w-screen bg-white py-4 shadow-md">
 	<div class="mx-auto flex max-w-screen-xl flex-wrap items-center justify-between px-4">
 		<a href="/" class="flex items-center">
 			<span class="self-center whitespace-nowrap text-xl font-semibold text-blue-700">Boroland</span

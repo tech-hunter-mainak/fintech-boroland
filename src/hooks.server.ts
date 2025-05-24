@@ -27,12 +27,12 @@ const handleAuth: Handle = async ({ event, resolve }) => {
 			event.locals.user = null;
 			event.locals.isTemporarySession = false;
 		}
-	} else if (tempSessionCookie && event.url.pathname === '/detailed-info') {
-		// For the /detailed-info route, allow temporary session
+	} else if (tempSessionCookie && event.url.pathname === '/dashboard/score') {
+		// For the /dashboard/score route, allow temporary session
 		try {
 			const userData = JSON.parse(tempSessionCookie);
 			console.log(
-				`[hooks] Using temporary session for user: ${userData.email} on detailed-info page`
+				`[hooks] Using temporary session for user: ${userData.email} on dashboard/score page`
 			);
 			event.locals.user = userData;
 			event.locals.isTemporarySession = true;
@@ -50,7 +50,7 @@ const handleAuth: Handle = async ({ event, resolve }) => {
 	}
 
 	// Protected routes that require authentication
-	const protectedRoutes = ['/dashboard', '/profile', '/detailed-info', '/settings'];
+	const protectedRoutes = ['/dashboard', '/profile', '/dashboard/score', '/settings'];
 
 	// Routes that can be accessed only if detailed info is already submitted
 	const requiresDetailedInfo = ['/dashboard', '/profile', '/settings'];
@@ -84,14 +84,21 @@ const handleAuth: Handle = async ({ event, resolve }) => {
 	// AND if they have a full session (not temporary)
 	if (routeRequiresDetailedInfo) {
 		if (event.locals.isTemporarySession) {
-			console.log('[hooks] User has temporary session, redirecting to detailed-info');
-			return redirect(307, '/detailed-info');
+			console.log('[hooks] User has temporary session, redirecting to dashboard/score');
+			return redirect(307, '/dashboard/score');
 		}
 
 		if (event.locals.user && event.locals.user.hasDetailedInfo === false) {
-			console.log('[hooks] User has not completed detailed info, redirecting to detailed-info');
-			return redirect(307, '/detailed-info');
+			console.log('[hooks] User has not completed detailed info, redirecting to dashboard/score');
+			return redirect(307, '/dashboard/score');
 		}
+	}
+
+	if(event.url.pathname == '/auth' && (sessionCookie)) {
+		throw redirect(307, '/dashboard');
+	}
+	if(event.url.pathname == '/auth' && (tempSessionCookie)) {
+		throw redirect(307, '/dashboard/score');
 	}
 
 	console.log(`[hooks] Proceeding with request for ${path}`);

@@ -5,7 +5,7 @@
 	import '../app.css';
 
 	// Track if we're on dashboard page
-	$: isDashboard = $page.url.pathname === '/dashboard';
+	$: isDashboard = ($page.url.pathname === '/dashboard' || $page.url.pathname === '/dashboard/score' || $page.url.pathname === '/dashboard/profile');
 	let isLargeScreen = true;
 
 	onMount(() => {

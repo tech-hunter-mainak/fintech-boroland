@@ -72,7 +72,7 @@
 				);
 
 				// Redirect to more detailed info
-				goto('/detailed-info');
+				goto('/dashboard/score');
 			} else {
 				alert(result.error || 'Registration failed. Please try again.');
 			}
@@ -113,10 +113,10 @@
 					// Redirect to dashboard if detailed info is submitted
 					goto('/dashboard');
 				} else {
-					console.log('User has not submitted detailed info, redirecting to detailed-info page');
-					// Redirect to detailed-info form if not submitted
+					console.log('User has not submitted detailed info, redirecting to dashboard/score page');
+					// Redirect to dashboard/score form if not submitted
 
-					// Save basic info to session storage for the detailed-info page
+					// Save basic info to session storage for the dashboard/score page
 					sessionStorage.setItem(
 						'userData',
 						JSON.stringify({
@@ -129,7 +129,7 @@
 						})
 					);
 
-					goto('/detailed-info');
+					goto('/dashboard/score');
 				}
 			} else {
 				// If the login component is using a reactive variable to show login status,

@@ -8,7 +8,6 @@ export { default as LoginForm } from './LoginForm.svelte';
 export { default as WhatIsCredit } from './WhatIsCredit.svelte';
 export { default as WhyChooseUs } from './WhyChooseUs.svelte';
 export { default as Reviews } from './Reviews.svelte';
-export { default as Sidebar } from './Sidebar.svelte';
 export { default as Features } from './Features.svelte';
 export { default as About } from './About.svelte';
 export { default as WhyUs } from './WhyUs.svelte';
