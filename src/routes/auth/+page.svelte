@@ -107,15 +107,10 @@
 			const result = await response.json();
 
 			if (result.success) {
-				// Check if user has submitted detailed info
-				if (result.hasDetailedInfo) {
-					console.log('User has submitted detailed info, redirecting to dashboard');
-					// Redirect to dashboard if detailed info is submitted
+				// Redirect based on whether user has submitted details
+				if (result.user.hasSubmittedDetails) {
 					goto('/dashboard');
 				} else {
-					console.log('User has not submitted detailed info, redirecting to dashboard/score page');
-					// Redirect to dashboard/score form if not submitted
-
 					// Save basic info to session storage for the dashboard/score page
 					sessionStorage.setItem(
 						'userData',
@@ -128,7 +123,6 @@
 							whatsappUpdates: result.user.whatsappUpdates
 						})
 					);
-
 					goto('/dashboard/score');
 				}
 			} else {
@@ -144,14 +138,6 @@
 			}
 		} catch (error) {
 			console.error('Error during login:', error);
-
-			// Reset login status in the component
-			document.dispatchEvent(
-				new CustomEvent('login-error', {
-					detail: { message: 'Login failed. Please try again.' }
-				})
-			);
-
 			alert('Login failed. Please try again.');
 		}
 	};

@@ -1,4 +1,7 @@
 import type { Actions } from '@sveltejs/kit';
+import { error } from '@sveltejs/kit';
+import type { PageServerLoad } from './$types';
+import { getUserById } from '$lib/server/db';
 
 export const actions: Actions = {
 	// This action will be called when the form is submitted
@@ -30,4 +33,13 @@ export const actions: Actions = {
 
 		return { success: false, error: 'Invalid session' };
 	}
+};
+
+export const load: PageServerLoad = async ({ parent }) => {
+	// Get the parent data which includes user info
+	const parentData = await parent();
+	
+	return {
+		// Add any additional page-specific data here if needed
+	};
 };

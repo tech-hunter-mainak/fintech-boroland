@@ -1,104 +1,89 @@
 // import { goto } from '$app/navigation';
 import { redirect, type Handle } from '@sveltejs/kit';
 import { sequence } from '@sveltejs/kit/hooks';
+import { getUserById } from '$lib/server/db';
 
-// First hook: handle auth and set locals.user
+// First hook: handle auth and set locals.userId
 const handleAuth: Handle = async ({ event, resolve }) => {
 	// Get the session cookie
 	const sessionCookie = event.cookies.get('session');
-	const tempSessionCookie = event.cookies.get('temp_session');
 	const path = event.url.pathname;
 
 	console.log(`[hooks] Processing request for path: ${path}`);
 
-	if (sessionCookie) {
-		try {
-			// Parse the session cookie
-			const userData = JSON.parse(sessionCookie);
-			console.log(`[hooks] Found valid session cookie for user: ${userData.email}`);
-
-			// Set the user in the locals object for access in endpoints and server load functions
-			event.locals.user = userData;
-			event.locals.isTemporarySession = false;
-		} catch {
-			// If there's an error parsing the cookie, clear it
-			console.log('[hooks] Error parsing session cookie, clearing it');
-			event.cookies.delete('session', { path: '/' });
-			event.locals.user = null;
-			event.locals.isTemporarySession = false;
-		}
-	} else if (tempSessionCookie && event.url.pathname === '/dashboard/score') {
-		// For the /dashboard/score route, allow temporary session
-		try {
-			const userData = JSON.parse(tempSessionCookie);
-			console.log(
-				`[hooks] Using temporary session for user: ${userData.email} on dashboard/score page`
-			);
-			event.locals.user = userData;
-			event.locals.isTemporarySession = true;
-		} catch {
-			console.log('[hooks] Error parsing temp session cookie, clearing it');
-			event.cookies.delete('temp_session', { path: '/' });
-			event.locals.user = null;
-			event.locals.isTemporarySession = false;
-		}
-	} else {
-		// No valid session cookie
-		console.log('[hooks] No valid session cookie found');
-		event.locals.user = null;
-		event.locals.isTemporarySession = false;
-	}
-
 	// Protected routes that require authentication
 	const protectedRoutes = ['/dashboard', '/profile', '/dashboard/score', '/settings'];
-
-	// Routes that can be accessed only if detailed info is already submitted
-	const requiresDetailedInfo = ['/dashboard', '/profile', '/settings'];
 
 	// Check if current route is protected
 	const isProtectedRoute = protectedRoutes.some(
 		(route) => event.url.pathname === route || event.url.pathname.startsWith(`${route}/`)
 	);
 
-	// Check if route requires detailed info
-	const routeRequiresDetailedInfo = requiresDetailedInfo.some(
-		(route) => event.url.pathname === route || event.url.pathname.startsWith(`${route}/`)
-	);
-
-	// For diagnostic purposes
-	if (isProtectedRoute) {
-		console.log(`[hooks] Accessing protected route: ${path}`);
+	// Handle root path redirect for authenticated users
+	if (path === '/' && sessionCookie) {
+		try {
+			const { userId } = JSON.parse(sessionCookie);
+			if (userId) {
+				console.log('[hooks] Authenticated user at root, redirecting to dashboard');
+				return redirect(307, '/dashboard');
+			}
+		} catch (error) {
+			console.error('[hooks] Error parsing session cookie at root:', error);
+		}
 	}
 
-	if (routeRequiresDetailedInfo) {
-		console.log(`[hooks] Route requires detailed info: ${path}`);
+	if (sessionCookie) {
+		try {
+			// Parse the session cookie to get userId
+			const { userId } = JSON.parse(sessionCookie);
+			console.log(`[hooks] Found valid session cookie for user ID: ${userId}`);
+
+			// Set the userId in locals
+			event.locals.userId = userId;
+
+			// For all routes except root, verify user exists in database
+			if (path !== '/') {
+				try {
+					const userData = await getUserById(userId);
+					if (!userData) {
+						console.log('[hooks] User not found in database, clearing session');
+						event.cookies.delete('session', { path: '/' });
+						event.locals.userId = null;
+						return redirect(307, '/auth');
+					}
+				} catch (error) {
+					console.error('[hooks] Error fetching user data:', error);
+					// Don't redirect on error, just log it and continue
+				}
+			}
+
+			// If we get here and it's a protected route, allow access
+			if (isProtectedRoute) {
+				console.log(`[hooks] Allowing access to protected route: ${path}`);
+				return resolve(event);
+			}
+
+		} catch (error) {
+			// If there's an error parsing the cookie, clear it
+			console.log('[hooks] Error parsing session cookie, clearing it');
+			event.cookies.delete('session', { path: '/' });
+			event.locals.userId = null;
+		}
+	} else {
+		// No valid session cookie
+		console.log('[hooks] No valid session cookie found');
+		event.locals.userId = null;
 	}
 
 	// Handle auth redirects
-	if (isProtectedRoute && !event.locals.user) {
+	if (isProtectedRoute && !event.locals.userId) {
 		console.log('[hooks] No user session, redirecting to auth');
 		return redirect(307, '/auth');
 	}
 
-	// For routes requiring detailed info, check if user has completed it
-	// AND if they have a full session (not temporary)
-	if (routeRequiresDetailedInfo) {
-		if (event.locals.isTemporarySession) {
-			console.log('[hooks] User has temporary session, redirecting to dashboard/score');
-			return redirect(307, '/dashboard/score');
-		}
-
-		if (event.locals.user && event.locals.user.hasDetailedInfo === false) {
-			console.log('[hooks] User has not completed detailed info, redirecting to dashboard/score');
-			return redirect(307, '/dashboard/score');
-		}
-	}
-
-	if(event.url.pathname == '/auth' && (sessionCookie)) {
-		throw redirect(307, '/dashboard');
-	}
-	if(event.url.pathname == '/auth' && (tempSessionCookie)) {
-		throw redirect(307, '/dashboard/score');
+	// Prevent authenticated users from accessing auth page
+	if (event.url.pathname === '/auth' && event.locals.userId) {
+		return redirect(307, '/dashboard');
 	}
 
 	console.log(`[hooks] Proceeding with request for ${path}`);

@@ -1,24 +1,51 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { goto } from '$app/navigation';
+	import { goto, invalidate } from '$app/navigation';
 	import { userSession } from '$lib/stores/userStore';
+	import { updateUserDetails, updatePrediction } from '../../../supabase';
+	import type { UserDetails } from '../../../supabase';
+	import { browser } from '$app/environment';
 
-	let formData: {
-		age: string;
+	// Get data from server load function
+	export let data;
+
+	// Log only during development and only on client-side
+	$: if (browser && import.meta.env.DEV) {
+		console.log('[Client] Score page user data:', data?.user);
+	}
+
+	// Form validation interface
+	interface ValidationError {
+		field: string;
+		message: string;
+	}
+
+	// Form data interface
+	interface FormData {
 		gender: string;
+		fullName: string;
+		age: string;
 		maritalStatus: string;
 		familyMembers: string;
 		isPrimaryEarner: string;
 		relationWithPrimaryEarner: string;
 		education: string;
-		skills: { skill: string; rating: string; years: string }[];
+		skills: Array<{
+			skill: string;
+			rating: string;
+			years: string;
+		}>;
 		hasCertification: string;
 		ownership: string[];
 		monthlyFamilyIncome: string;
 		monthlyFamilyExpenditure: string;
-	} = {
-		age: '',
+	}
+
+	// Initialize form data
+	let formData: FormData = {
 		gender: '',
+		fullName: '',
+		age: '',
 		maritalStatus: '',
 		familyMembers: '',
 		isPrimaryEarner: '',
@@ -35,6 +62,97 @@
 		monthlyFamilyExpenditure: ''
 	};
 
+	// Validation errors
+	let validationErrors: ValidationError[] = [];
+
+	// Validate form data
+	function validateForm(): boolean {
+		validationErrors = [];
+
+		// Age validation (18-100)
+		const age = parseInt(formData.age);
+		if (isNaN(age) || age < 18 || age > 100) {
+			validationErrors.push({
+				field: 'age',
+				message: 'Age must be between 18 and 100 years'
+			});
+		}
+
+		// Skills validation
+		formData.skills.forEach((skill, index) => {
+			if (skill.skill && skill.years) {
+				const yearsExp = parseInt(skill.years);
+				if (yearsExp >= age) {
+					validationErrors.push({
+						field: `skill_${index + 1}_years`,
+						message: `Years of experience cannot be greater than or equal to age`
+					});
+				}
+			}
+		});
+
+		// Family members validation
+		const familyMembers = parseInt(formData.familyMembers);
+		if (isNaN(familyMembers) || familyMembers < 1) {
+			validationErrors.push({
+				field: 'familyMembers',
+				message: 'Number of family members must be at least 1'
+			});
+		}
+
+		// Income validation
+		const income = parseFloat(formData.monthlyFamilyIncome);
+		if (isNaN(income) || income <= 0) {
+			validationErrors.push({
+				field: 'monthlyFamilyIncome',
+				message: 'Monthly family income must be greater than 0'
+			});
+		}
+
+		// Expenditure validation
+		const expenditure = parseFloat(formData.monthlyFamilyExpenditure);
+		if (isNaN(expenditure) || expenditure <= 0) {
+			validationErrors.push({
+				field: 'monthlyFamilyExpenditure',
+				message: 'Monthly family expenditure must be greater than 0'
+			});
+		}
+
+		if (expenditure >= income) {
+			validationErrors.push({
+				field: 'monthlyFamilyExpenditure',
+				message: 'Monthly expenditure cannot be greater than or equal to income'
+			});
+		}
+
+		// Required field validation
+		if (!formData.gender) {
+			validationErrors.push({ field: 'gender', message: 'Gender is required' });
+		}
+		if (!formData.maritalStatus) {
+			validationErrors.push({ field: 'maritalStatus', message: 'Marital status is required' });
+		}
+		if (!formData.isPrimaryEarner) {
+			validationErrors.push({ field: 'isPrimaryEarner', message: 'Primary earner status is required' });
+		}
+		if (!formData.education) {
+			validationErrors.push({ field: 'education', message: 'Education is required' });
+		}
+		if (!formData.hasCertification) {
+			validationErrors.push({ field: 'hasCertification', message: 'Certification status is required' });
+		}
+		if (formData.ownership.length === 0) {
+			validationErrors.push({ field: 'ownership', message: 'Please select at least one ownership option' });
+		}
+
+		// At least one skill is required
+		if (!formData.skills[0].skill) {
+			validationErrors.push({ field: 'skill_1', message: 'At least one skill is required' });
+		}
+
+		return validationErrors.length === 0;
+	}
+
 	const educationOptions = ['Below HSLC', 'HSLC', 'HS', 'HSLC', 'Others'];
 
 	const skillOptions = [
@@ -49,211 +167,198 @@
 
 	const ownershipOptions = ['Land', 'Machine', 'Vehicle', 'None'];
 
-	onMount(async () => {
-		// Check if user data exists in session storage
-		const userData = sessionStorage.getItem('userData');
-		if (!userData) {
-			goto('/');
-			return;
-		}
-
-		// Pre-fill some fields from existing user data
-		const parsedData = JSON.parse(userData);
-
-		// Make sure to convert gender properly
-		if (parsedData.gender) {
-			if (parsedData.gender.toLowerCase() === 'male') {
-				formData.gender = 'M';
-			} else if (parsedData.gender.toLowerCase() === 'female') {
-				formData.gender = 'F';
-			} else {
-				// If it's already a single character, use it directly
-				formData.gender = parsedData.gender.toUpperCase().charAt(0);
-			}
+	onMount(() => {
+		// Pre-fill form data from server data if available
+		if (data?.user) {
+			const userData = data.user;
+			
+			// Pre-fill the form with existing user data
+			formData = {
+				...formData,
+				gender: userData.gender || '',
+				fullName: userData.full_name || '',
+				age: userData.age?.toString() || '',
+				maritalStatus: userData.marital_status || '',
+				familyMembers: userData.family_members?.toString() || '',
+				isPrimaryEarner: userData.is_primary_earner || '',
+				relationWithPrimaryEarner: userData.relation_with_primary_earner || '',
+				education: userData.education || '',
+				skills: [
+					{
+						skill: userData.skill_1 || '',
+						rating: userData.skill_1_rating?.toString() || '',
+						years: userData.skill_1_years?.toString() || ''
+					},
+					{
+						skill: userData.skill_2 || '',
+						rating: userData.skill_2_rating?.toString() || '',
+						years: userData.skill_2_years?.toString() || ''
+					},
+					{
+						skill: userData.skill_3 || '',
+						rating: userData.skill_3_rating?.toString() || '',
+						years: userData.skill_3_years?.toString() || ''
+					}
+				],
+				hasCertification: userData.has_certification || 'No',
+				ownership: userData.ownership || [],
+				monthlyFamilyIncome: userData.monthly_family_income?.toString() || '',
+				monthlyFamilyExpenditure: userData.monthly_family_expenditure?.toString() || ''
+			};
 		}
 	});
 
 	const handleSubmit = async () => {
 		try {
-			const userData = sessionStorage.getItem('userData');
-			if (!userData) {
-				goto('/');
+			// Validate form
+			if (!validateForm()) {
+				// Show validation errors
+				const errorMessages = validationErrors.map(err => `${err.message}`).join('\n');
+				alert('Please fix the following errors:\n' + errorMessages);
 				return;
 			}
 
-			const basicInfo = JSON.parse(userData);
+			// Get the correct auth_user_id
+			const authUserId = data.user.auth_user_id || data.user.id;
+			if (!authUserId) {
+				throw new Error('User ID not found');
+			}
 
-			// Combine basic info with detailed info
-			const completeUserData = {
-				authUserId: basicInfo.authUserId, // This is the key link to auth_users table
-				gender: formData.gender,
-				fullName: basicInfo.fullName,
+			// Transform form data for database
+			const userDetails: Partial<UserDetails> = {
+				full_name: formData.fullName || null,
+				gender: formData.gender || null,
 				age: parseInt(formData.age),
-				maritalStatus: formData.maritalStatus,
-				familyMembers: parseInt(formData.familyMembers),
-				isPrimaryEarner: formData.isPrimaryEarner,
-				relationWithPrimaryEarner: formData.relationWithPrimaryEarner,
+				marital_status: formData.maritalStatus,
+				family_members: parseInt(formData.familyMembers),
+				is_primary_earner: formData.isPrimaryEarner,
+				relation_with_primary_earner: formData.relationWithPrimaryEarner || null,
 				education: formData.education,
-				skills: formData.skills.map((skill) => ({
-					...skill,
-					rating: parseInt(skill.rating),
-					years: parseInt(skill.years)
-				})),
-				hasCertification: formData.hasCertification,
-				ownership: formData.ownership,
-				monthlyFamilyIncome: parseFloat(formData.monthlyFamilyIncome),
-				monthlyFamilyExpenditure: parseFloat(formData.monthlyFamilyExpenditure),
-				whatsappUpdates: basicInfo.whatsappUpdates
+				skill_1: formData.skills[0]?.skill || null,
+				skill_1_rating: formData.skills[0]?.rating ? parseInt(formData.skills[0].rating) : null,
+				skill_1_years: formData.skills[0]?.years ? parseInt(formData.skills[0].years) : null,
+				skill_2: formData.skills[1]?.skill || null,
+				skill_2_rating: formData.skills[1]?.rating ? parseInt(formData.skills[1].rating) : null,
+				skill_2_years: formData.skills[1]?.years ? parseInt(formData.skills[1].years) : null,
+				skill_3: formData.skills[2]?.skill || null,
+				skill_3_rating: formData.skills[2]?.rating ? parseInt(formData.skills[2].rating) : null,
+				skill_3_years: formData.skills[2]?.years ? parseInt(formData.skills[2].years) : null,
+				has_certification: formData.hasCertification || 'No',
+				ownership: formData.ownership.length > 0 ? formData.ownership : ['None'],
+				monthly_family_income: parseFloat(formData.monthlyFamilyIncome),
+				monthly_family_expenditure: parseFloat(formData.monthlyFamilyExpenditure)
 			};
 
-			// Store in database - now updating user details with auth user ID
-			const saveResponse = await fetch('/api/user-details', {
+			// Store in database using helper function with correct ID
+			const savedUser = await updateUserDetails(authUserId, userDetails);
+			if (!savedUser) {
+				throw new Error('Failed to save user details');
+			}
+
+			// Format data for ML API
+			const mlData = {
+				data: [{
+					Age: parseInt(formData.age),
+					GENDER: formData.gender,
+					'MARITAL STATUS': formData.maritalStatus,
+					'NO. OF MEMBERS IN YOUR FAMILY ?': parseInt(formData.familyMembers),
+					'ARE YOU THE PRIMARY EARNER OF YOUR FAMILY ?': formData.isPrimaryEarner,
+					'Relation with primary earner ?': formData.relationWithPrimaryEarner || 'None',
+					'WHAT IS YOUR HIGHEST EDUCATIONAL QUALIFICATION?': formData.education,
+					'SKILL 1': formData.skills[0]?.skill || 'None',
+					'RATING OF SKILL SET 1 (out of  10)': parseFloat(formData.skills[0]?.rating) || 0,
+					'HOW MANY YEARS HAVE YOU BEEN ASSOCIATED WITH SKILL 1 ?': parseFloat(formData.skills[0]?.years) || 0,
+					'SKILL 2': formData.skills[1]?.skill || 'None',
+					'RATING OF SKILL SET 2 (out of  10)': parseFloat(formData.skills[1]?.rating) || 0,
+					'HOW MANY YEARS HAVE YOU BEEN ASSOCIATED WITH SKILL 2 ?': parseFloat(formData.skills[1]?.years) || 0,
+					'SKILL 3': formData.skills[2]?.skill || 'None',
+					'RATING OF SKILL SET 3 (out of  10)': parseFloat(formData.skills[2]?.rating) || 0,
+					'HOW MANY YEARS HAVE YOU BEEN ASSOCIATED WITH SKILL 3 ?': parseFloat(formData.skills[2]?.years) || 0,
+					'DO YOU HAVE ANY CERTIFICATION OF THE ABOVE-MENTIONED SKILL SET?': formData.hasCertification,
+					'OWNERSHIP ( includes Land,machine)': formData.ownership.length ? formData.ownership.join(',') : 'None',
+					'MONTHLY FAMILY INCOME': parseFloat(formData.monthlyFamilyIncome),
+					'MONTHLY FAMILY EXPENDITURE': parseFloat(formData.monthlyFamilyExpenditure)
+				}]
+			};
+
+			if (browser && import.meta.env.DEV) {
+				console.log('[Client] ML API request data:', mlData);
+			}
+
+			// Call ML API
+			const mlResponse = await fetch('https://bodoland-api.onrender.com/predict', {
 				method: 'POST',
 				headers: {
-					'Content-Type': 'application/json'
+					'Content-Type': 'application/json',
+					'Accept': 'application/json'
 				},
-				body: JSON.stringify(completeUserData)
+				body: JSON.stringify(mlData)
 			});
 
-			if (!saveResponse.ok) {
-				const errorData = await saveResponse.json();
-				throw new Error(errorData.message || 'Failed to save user data');
+			if (!mlResponse.ok) {
+				const errorText = await mlResponse.text();
+				console.error('ML API Error:', errorText);
+				throw new Error('Failed to get credit assessment');
 			}
 
-			const savedUser = await saveResponse.json();
+			const mlResult = await mlResponse.json();
 
-			try {
-				// Format data according to ML API requirements
-				const mlData = {
-					data: [
-						{
-							Age: parseInt(formData.age),
-							GENDER: formData.gender,
-							'MARITAL STATUS': formData.maritalStatus,
-							'NO. OF MEMBERS IN YOUR FAMILY ?': parseInt(formData.familyMembers),
-							'ARE YOU THE PRIMARY EARNER OF YOUR FAMILY ?': formData.isPrimaryEarner,
-							'Relation with primary earner ?': formData.relationWithPrimaryEarner || 'None',
-							'WHAT IS YOUR HIGHEST EDUCATIONAL QUALIFICATION?':
-								formData.education === 'Graduate' || formData.education === 'Post Graduate'
-									? 'HSLC'
-									: formData.education,
-							'SKILL 1': formData.skills[0]?.skill || 'None',
-							'RATING OF SKILL SET 1 (out of  10)': parseFloat(formData.skills[0]?.rating) || 0,
-							'HOW MANY YEARS HAVE YOU BEEN ASSOCIATED WITH SKILL 1 ?':
-								parseFloat(formData.skills[0]?.years) || 0,
-							'SKILL 2': formData.skills[1]?.skill || 'None',
-							'RATING OF SKILL SET 2 (out of  10)': parseFloat(formData.skills[1]?.rating) || 0,
-							'HOW MANY YEARS HAVE YOU BEEN ASSOCIATED WITH SKILL 2 ?':
-								parseFloat(formData.skills[1]?.years) || 0,
-							'SKILL 3': formData.skills[2]?.skill || 'None',
-							'RATING OF SKILL SET 3 (out of  10)': parseFloat(formData.skills[2]?.rating) || 0,
-							'HOW MANY YEARS HAVE YOU BEEN ASSOCIATED WITH SKILL 3 ?':
-								parseFloat(formData.skills[2]?.years) || 0,
-							'DO YOU HAVE ANY CERTIFICATION OF THE ABOVE-MENTIONED SKILL SET?':
-								formData.hasCertification,
-							'OWNERSHIP ( includes Land,machine)': formData.ownership.length
-								? formData.ownership.join(',')
-								: 'None',
-							'MONTHLY FAMILY INCOME': parseFloat(formData.monthlyFamilyIncome),
-							'MONTHLY FAMILY EXPENDITURE': parseFloat(formData.monthlyFamilyExpenditure)
-						}
-					]
-				};
-
-				console.log('Sending data to ML API:', JSON.stringify(mlData, null, 2));
-
-				// Make API call for credit assessment
-				const mlResponse = await fetch('https://bodoland-api.onrender.com/predict', {
-					method: 'POST',
-					headers: {
-						'Content-Type': 'application/json'
-					},
-					body: JSON.stringify(mlData)
-				});
-
-				if (!mlResponse.ok) {
-					const errorText = await mlResponse.text();
-					console.error('ML API Error:', errorText);
-					throw new Error('Failed to get credit assessment');
-				}
-
-				const mlResult = await mlResponse.json();
-				console.log('ML API Response:', mlResult);
-
-				if (mlResult.status !== 'success' || !mlResult.results || !mlResult.results[0]) {
-					throw new Error('Invalid response from credit assessment');
-				}
-
-				const creditResult = {
-					isSelected: mlResult.results[0].prediction === 1,
-					score: Math.round(mlResult.results[0].probability * 100),
-					reason: `Based on our AI assessment, you have a ${Math.round(mlResult.results[0].probability * 100)}% match with successful credit profiles.`
-				};
-
-				// Update user selection status
-				if (savedUser.id) {
-					const updateResponse = await fetch('/api/user-details', {
-						method: 'PATCH',
-						headers: {
-							'Content-Type': 'application/json'
-						},
-						body: JSON.stringify({
-							userId: basicInfo.authUserId, // Use auth user ID
-							isSelected: creditResult.isSelected,
-							predictionPercentage: creditResult.score // Store the prediction percentage
-						})
-					});
-
-					if (!updateResponse.ok) {
-						console.error('Failed to update user selection status');
-					}
-				}
-
-				// Set user session with complete data
-				userSession.login(
-					{
-						...savedUser,
-						id: basicInfo.authUserId, // Use auth user ID as the main ID
-						email: basicInfo.email,
-						mobile: basicInfo.mobile
-					},
-					creditResult
-				);
-
-				// After saving all data, call the server action to convert the temporary session to a full session
-				const sessionResponse = await fetch('?/submitDetails', {
-					method: 'POST',
-					headers: {
-						'Content-Type': 'application/json'
-					},
-					body: JSON.stringify({ processed: true })
-				});
-
-				const sessionResult = await sessionResponse.json();
-				console.log('Session update result:', sessionResult);
-
-				// Use window.location instead of goto to ensure a full page reload
-				// This prevents the history.pushState() error
-				window.location.href = '/dashboard';
-			} catch (creditError) {
-				console.error('Credit assessment error:', creditError);
-				alert('There was an issue with the credit assessment. Please try again.');
+			if (browser && import.meta.env.DEV) {
+				console.log('[Client] ML API response:', mlResult);
 			}
-		} catch (error) {
-			console.error('Error:', error);
+
+			if (mlResult.status !== 'success' || !mlResult.results || !mlResult.results[0]) {
+				throw new Error('Invalid response from credit assessment');
+			}
+
+			const creditResult = {
+				isSelected: mlResult.results[0].prediction === 1,
+				score: Math.round(mlResult.results[0].probability * 100)
+			};
+
+			// Update prediction using helper function with correct ID
+			await updatePrediction(authUserId, creditResult.isSelected, creditResult.score);
+
+			// Refresh only user data dependency
+			await invalidate('user:data');
+
+			// Show success message
+			alert(`Your information has been updated successfully! Your credit assessment score is ${creditResult.score}%`);
+
+			// Redirect to dashboard with fresh data
+			goto('/dashboard');
+		} catch (error: unknown) {
+			console.error('[Client] Error submitting form:', error);
 			if (error instanceof Error) {
-				alert(error.message || 'Failed to submit data. Please try again.');
+				alert(error.message || 'Failed to process your information');
 			} else {
-				alert('Failed to submit data. Please try again.');
+				alert('Failed to process your information');
 			}
 		}
 	};
+
+	// Helper function to check if a field should be disabled
+	function isFieldDisabled(fieldName: string): boolean {
+		const nonEditableFields = ['email', 'mobile', 'full_name'];
+		return nonEditableFields.includes(fieldName);
+	}
 </script>
 
 <div class="min-h-screen py-12">
 	<div class="mx-auto px-4 sm:px-6 lg:px-8">
 		<div class="rounded-lg bg-white p-6 md:p-8">
 			<h2 class="mb-6 text-2xl font-bold text-gray-800">Complete Your Profile</h2>
+
+			{#if validationErrors.length > 0}
+				<div class="mb-6 rounded-lg bg-red-50 p-4">
+					<h3 class="mb-2 text-lg font-medium text-red-800">Please fix the following errors:</h3>
+					<ul class="list-inside list-disc text-red-700">
+						{#each validationErrors as error}
+							<li>{error.message}</li>
+						{/each}
+					</ul>
+				</div>
+			{/if}
 
 			<form on:submit|preventDefault={handleSubmit} class="space-y-6">
 				<!-- Basic Information -->
@@ -267,8 +372,11 @@
 							min="18"
 							max="100"
 							required
-							class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+							class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 {validationErrors.find(e => e.field === 'age') ? 'border-red-500' : ''}"
 						/>
+						{#if validationErrors.find(e => e.field === 'age')}
+							<p class="mt-1 text-sm text-red-600">{validationErrors.find(e => e.field === 'age')?.message}</p>
+						{/if}
 					</div>
 
 					<div>
@@ -496,3 +604,13 @@
 		</div>
 	</div>
 </div>
+
+<style>
+	/* Add global styles for SVG icons */
+	:global(svg[width="1.25rem"]) {
+		width: 20px;
+	}
+	:global(svg[height="1.25rem"]) {
+		height: 20px;
+	}
+</style>

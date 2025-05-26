@@ -51,7 +51,8 @@
 		]
 	},
 	"dependencies": {
-		"@supabase/supabase-js": "^2.49.7",
+		"@supabase/ssr": "^0.6.1",
+		"@supabase/supabase-js": "^2.49.8",
 		"bcryptjs": "^3.0.2",
 		"prettier-plugin-tailwindcss": "^0.6.11",
 		"supabase": "^2.23.4"

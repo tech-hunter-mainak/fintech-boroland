@@ -1,52 +1,71 @@
-import { writable } from 'svelte/store';
+import { writable, get } from 'svelte/store';
+import { fetchUserById } from '../../supabase';
+import type { AuthUser, UserDetails } from '../../supabase';
 
 interface UserSession {
 	isLoggedIn: boolean;
-	user: any;
-	creditData: any;
+	userId: string | null;
+	userData: (AuthUser & Partial<UserDetails> & { hasSubmittedDetails: boolean }) | null;
 }
 
-const createUserSessionStore = () => {
+function createUserSessionStore() {
 	const { subscribe, set, update } = writable<UserSession>({
 		isLoggedIn: false,
-		user: null,
-		creditData: null
+		userId: null,
+		userData: null
 	});
 
 	return {
 		subscribe,
-		login: (userData: any, creditData: any) => {
-			// Store in session storage
-			sessionStorage.setItem('userData', JSON.stringify(userData));
-			if (creditData) {
-				sessionStorage.setItem('creditData', JSON.stringify(creditData));
+		login: async (userId: string) => {
+			try {
+				const userData = await fetchUserById(userId);
+				
+				set({
+					isLoggedIn: true,
+					userId,
+					userData
+				});
+			} catch (error) {
+				console.error('Error in login:', error);
+				// Keep session but mark data as null
+				set({
+					isLoggedIn: true,
+					userId,
+					userData: null
+				});
 			}
-
-			set({
-				isLoggedIn: true,
-				user: userData,
-				creditData
-			});
 		},
 		logout: () => {
-			// Clear session storage
-			sessionStorage.removeItem('userData');
-			sessionStorage.removeItem('creditData');
-
 			set({
 				isLoggedIn: false,
-				user: null,
-				creditData: null
+				userId: null,
+				userData: null
 			});
 		},
-		updateCreditData: (creditData: any) => {
-			update((session) => ({
-				...session,
-				creditData
-			}));
-			sessionStorage.setItem('creditData', JSON.stringify(creditData));
+		refreshUserData: async () => {
+			const currentSession = get(userSession);
+			if (!currentSession.userId) return;
+
+			try {
+				const userData = await fetchUserById(currentSession.userId);
+				
+				set({
+					isLoggedIn: true,
+					userId: currentSession.userId,
+					userData
+				});
+			} catch (error) {
+				console.error('Error refreshing user data:', error);
+				// Keep session but mark data as null
+				set({
+					isLoggedIn: true,
+					userId: currentSession.userId,
+					userData: null
+				});
+			}
 		}
 	};
-};
+}
 
 export const userSession = createUserSessionStore();

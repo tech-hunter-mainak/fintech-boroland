@@ -1,25 +1,10 @@
-import { createClient } from '@supabase/supabase-js';
-import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from '$env/static/public';
+import supabase from '../../supabase';
 import bcrypt from 'bcryptjs';
 
-// Create Supabase client for server-side operations
-const supabase = createClient(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY, {
-	auth: {
-		persistSession: false
-	}
-});
-
-// Initialize database by creating tables if needed
+// Remove duplicate client initialization and use the shared client
 export async function initializeDatabase() {
 	try {
-		// Supabase doesn't allow schema creation via API
-		// These tables should be created manually in the Supabase dashboard
 		console.log('Checking database connection...');
-
-		// Required tables:
-		// 1. auth_users - for authentication data
-		// 2. user_details - for user profile and ML data
-
 		console.log('Database connection verified successfully');
 	} catch (error) {
 		console.error('Error initializing database:', error);
@@ -147,79 +132,132 @@ export async function verifyUserCredentials(credentials: { identifier: string; p
 	}
 }
 
-// Create or update user profile details
-export async function upsertUserDetails(authUserId: string, userData: any) {
+// Get user by ID with all details
+export async function getUserById(userId: string) {
 	try {
-		// Check if user details already exist
-		const { data: existingDetails } = await supabase
+		// First get auth user
+		const { data: authUser, error: authError } = await supabase
+			.from('auth_users')
+			.select('*')
+			.eq('id', userId)
+			.single();
+
+		if (authError) throw authError;
+
+		// Then get user details
+		const { data: userDetails, error: detailsError } = await supabase
 			.from('user_details')
-			.select('id')
-			.eq('auth_user_id', authUserId)
+			.select('*')
+			.eq('auth_user_id', userId)
 			.maybeSingle();
 
-		// Convert gender to single character format
-		let genderChar = userData.gender;
-		if (typeof userData.gender === 'string') {
-			if (userData.gender.toLowerCase() === 'male') {
-				genderChar = 'M';
-			} else if (userData.gender.toLowerCase() === 'female') {
-				genderChar = 'F';
-			}
+		// Combine the data, ensuring auth_user_id is preserved
+		return {
+			...authUser,
+			...(userDetails || {}),
+			auth_user_id: userId, // Ensure this is always the auth user's ID
+			hasSubmittedDetails: !!userDetails
+		};
+	} catch (error) {
+		console.error('Error in getUserById:', error);
+		throw error;
+	}
+}
+
+// Get user by email or mobile
+export async function getUserByEmailOrMobile(email: string, mobile: string) {
+	try {
+		let query = supabase.from('auth_users').select('*');
+
+		if (email) {
+			query = query.eq('email', email);
+		} else if (mobile) {
+			query = query.eq('mobile', mobile);
 		}
 
+		const { data: authUser, error: authError } = await query.single();
+
+		if (authError) throw authError;
+
+		// Get user details if auth user exists
+		const { data: userDetails } = await supabase
+			.from('user_details')
+			.select('*')
+			.eq('auth_user_id', authUser.id)
+			.single();
+
+		return {
+			...authUser,
+			...(userDetails || {}),
+			hasSubmittedDetails: !!userDetails
+		};
+	} catch (error) {
+		console.error('Error in getUserByEmailOrMobile:', error);
+		throw error;
+	}
+}
+
+// Create or update user details
+export async function upsertUserDetails(authUserId: string, userData: any) {
+	try {
+		// Check if user details exist
+		const { data: existingDetails } = await supabase
+			.from('user_details')
+			.select()
+			.eq('auth_user_id', authUserId)
+			.single();
+
+		// Prepare user details object
 		const userDetailsObject = {
 			auth_user_id: authUserId,
-			gender: genderChar,
 			full_name: userData.fullName,
-			whatsapp_updates: userData.whatsappUpdates,
+			gender: userData.gender,
 			age: userData.age,
 			marital_status: userData.maritalStatus,
 			family_members: userData.familyMembers,
 			is_primary_earner: userData.isPrimaryEarner,
 			relation_with_primary_earner: userData.relationWithPrimaryEarner,
 			education: userData.education,
-			skill_1: userData.skills?.[0]?.skill,
-			skill_1_rating: userData.skills?.[0]?.rating,
-			skill_1_years: userData.skills?.[0]?.years,
-			skill_2: userData.skills?.[1]?.skill,
-			skill_2_rating: userData.skills?.[1]?.rating,
-			skill_2_years: userData.skills?.[1]?.years,
-			skill_3: userData.skills?.[2]?.skill,
-			skill_3_rating: userData.skills?.[2]?.rating,
-			skill_3_years: userData.skills?.[2]?.years,
+			skill_1: userData.skill_1,
+			skill_1_rating: userData.skill_1_rating,
+			skill_1_years: userData.skill_1_years,
+			skill_2: userData.skill_2,
+			skill_2_rating: userData.skill_2_rating,
+			skill_2_years: userData.skill_2_years,
+			skill_3: userData.skill_3,
+			skill_3_rating: userData.skill_3_rating,
+			skill_3_years: userData.skill_3_years,
 			has_certification: userData.hasCertification,
 			ownership: userData.ownership,
 			monthly_family_income: userData.monthlyFamilyIncome,
-			monthly_family_expenditure: userData.monthlyFamilyExpenditure
+			monthly_family_expenditure: userData.monthlyFamilyExpenditure,
+			// Preserve existing prediction data if it exists
+			is_selected: existingDetails?.is_selected ?? null,
+			prediction_percentage: existingDetails?.prediction_percentage ?? null,
+			prediction_updated_at: existingDetails?.prediction_updated_at ?? null,
+			updated_at: new Date().toISOString()
 		};
 
 		let result;
-
 		if (existingDetails) {
-			// Update existing details
+			// Update existing record
 			const { data, error } = await supabase
 				.from('user_details')
-				.update({
-					...userDetailsObject,
-					updated_at: new Date().toISOString()
-				})
-				.eq('id', existingDetails.id)
+				.update(userDetailsObject)
+				.eq('auth_user_id', authUserId)
 				.select()
 				.single();
 
 			if (error) throw error;
 			result = data;
 		} else {
-			// Insert new details
+			// Insert new record
 			const { data, error } = await supabase
 				.from('user_details')
-				.insert([
-					{
-						...userDetailsObject,
-						created_at: new Date().toISOString(),
-						updated_at: new Date().toISOString()
-					}
-				])
+				.insert({
+					...userDetailsObject,
+					created_at: new Date().toISOString()
+				})
 				.select()
 				.single();
 
@@ -227,9 +265,10 @@ export async function upsertUserDetails(authUserId: string, userData: any) {
 			result = data;
 		}
 
-		return result;
+		// Return complete user data
+		return await getUserById(authUserId);
 	} catch (error) {
-		console.error('Error upserting user details:', error);
+		console.error('Error in upsertUserDetails:', error);
 		throw error;
 	}
 }
@@ -251,100 +290,59 @@ export async function upsertUser(userData: any) {
 	}
 }
 
-// Get user by email or mobile
-export async function getUserByEmailOrMobile(email: string, mobile: string) {
+// Update user selection status after ML prediction
+export async function updateUserSelection(authUserId: string, isSelected: boolean, predictionPercentage: number) {
 	try {
-		let query = supabase.from('auth_users').select(`
-			*,
-			user_details:user_details(*)
-		`);
+		// First check if user details exist
+		const { data: existingDetails } = await supabase
+			.from('user_details')
+			.select()
+			.eq('auth_user_id', authUserId)
+			.single();
 
-		if (email) {
-			query = query.eq('email', email);
-		} else if (mobile) {
-			query = query.eq('mobile', mobile);
-		} else {
-			throw new Error('Email or mobile is required');
+		if (!existingDetails) {
+			throw new Error('User details not found');
 		}
 
-		const { data, error } = await query.maybeSingle();
-
-		if (error && error.code !== 'PGRST116') throw error; // PGRST116 is "no rows returned" error
-
-		if (!data) return null;
-
-		// Format the response to flatten the structure
-		return {
-			id: data.id,
-			email: data.email,
-			mobile: data.mobile,
-			...(data.user_details || {})
-		};
-	} catch (error) {
-		console.error('Error getting user:', error);
-		throw error;
-	}
-}
-
-// Update user selection status
-export async function updateUserSelection(
-	userId: string,
-	isSelected: boolean,
-	predictionPercentage?: number
-) {
-	try {
-		// Build update object with required fields
-		const updateData: any = {
-			is_selected: isSelected,
-			updated_at: new Date().toISOString()
-		};
-
-		// Add prediction percentage if provided
-		if (predictionPercentage !== undefined) {
-			updateData.prediction_percentage = predictionPercentage;
-		}
-
+		// Update with prediction data
 		const { data, error } = await supabase
 			.from('user_details')
-			.update(updateData)
-			.eq('auth_user_id', userId)
+			.update({
+				is_selected: isSelected,
+				prediction_percentage: predictionPercentage,
+				prediction_updated_at: new Date().toISOString(),
+				updated_at: new Date().toISOString()
+			})
+			.eq('auth_user_id', authUserId)
 			.select()
 			.single();
 
-		if (error) throw error;
-		return data;
+		if (error) {
+			console.error('Error updating user selection:', error);
+			throw error;
+		}
+
+		// Return complete user data
+		return await getUserById(authUserId);
 	} catch (error) {
-		console.error('Error updating user selection:', error);
+		console.error('Error in updateUserSelection:', error);
 		throw error;
 	}
 }
 
-// Check if user has submitted detailed info
-export async function hasSubmittedDetailedInfo(authUserId: string): Promise<boolean> {
+// Check if user has submitted detailed information
+export async function hasSubmittedDetailedInfo(userId: string): Promise<boolean> {
 	try {
 		const { data, error } = await supabase
 			.from('user_details')
-			.select('age, marital_status, family_members')
-			.eq('auth_user_id', authUserId)
-			.maybeSingle();
+			.select('id')
+			.eq('auth_user_id', userId)
+			.single();
 
-		if (error) {
-			console.error('Error checking detailed info:', error);
-			return false;
-		}
-
-		// If we have data and essential fields are filled, consider it complete
-		return (
-			!!data &&
-			data.age !== null &&
-			data.age !== undefined &&
-			data.marital_status !== null &&
-			data.marital_status !== undefined &&
-			data.family_members !== null &&
-			data.family_members !== undefined
-		);
+		if (error && error.code !== 'PGRST116') throw error;
+		return !!data;
 	} catch (error) {
-		console.error('Error checking if user submitted detailed info:', error);
+		console.error('Error in hasSubmittedDetailedInfo:', error);
 		return false;
 	}
 }
