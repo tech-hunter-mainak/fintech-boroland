@@ -167,32 +167,70 @@ export async function getUserById(userId: string) {
 // Get user by email or mobile
 export async function getUserByEmailOrMobile(email: string, mobile: string) {
 	try {
-		let query = supabase.from('auth_users').select('*');
+		// Check by email first
+		const { data: emailUser, error: emailError } = await supabase
+			.from('auth_users')
+			.select('*')
+			.eq('email', email)
+			.maybeSingle();
 
-		if (email) {
-			query = query.eq('email', email);
-		} else if (mobile) {
-			query = query.eq('mobile', mobile);
+		// If no user found by email and mobile is provided, check by mobile
+		if (!emailUser && mobile) {
+			const { data: mobileUser, error: mobileError } = await supabase
+				.from('auth_users')
+				.select('*')
+				.eq('mobile', mobile)
+				.maybeSingle();
+
+			if (mobileError && mobileError.code !== 'PGRST116') {
+				throw mobileError;
+			}
+
+			if (mobileUser) {
+				// Get user details if auth user exists
+				const { data: userDetails, error: detailsError } = await supabase
+					.from('user_details')
+					.select('*')
+					.eq('auth_user_id', mobileUser.id)
+					.maybeSingle();
+
+				if (detailsError && detailsError.code !== 'PGRST116') {
+					throw detailsError;
+				}
+
+				return {
+					...mobileUser,
+					...(userDetails || {}),
+					hasSubmittedDetails: !!userDetails
+				};
+			}
 		}
 
-		const { data: authUser, error: authError } = await query.single();
+		// If email user exists, get their details
+		if (emailUser) {
+			const { data: userDetails, error: detailsError } = await supabase
+				.from('user_details')
+				.select('*')
+				.eq('auth_user_id', emailUser.id)
+				.maybeSingle();
 
-		if (authError) throw authError;
+			if (detailsError && detailsError.code !== 'PGRST116') {
+				throw detailsError;
+			}
 
-		// Get user details if auth user exists
-		const { data: userDetails } = await supabase
-			.from('user_details')
-			.select('*')
-			.eq('auth_user_id', authUser.id)
-			.single();
+			return {
+				...emailUser,
+				...(userDetails || {}),
+				hasSubmittedDetails: !!userDetails
+			};
+		}
 
-		return {
-			...authUser,
-			...(userDetails || {}),
-			hasSubmittedDetails: !!userDetails
-		};
-	} catch (error) {
-		console.error('Error in getUserByEmailOrMobile:', error);
+		return null; // No user found
+	} catch (error: any) {
+		console.error('[Server] Error in getUserByEmailOrMobile:', error);
+		if (error.code === 'PGRST116') {
+			return null; // No user found
+		}
 		throw error;
 	}
 }
@@ -234,7 +272,6 @@ export async function upsertUserDetails(authUserId: string, userData: any) {
 			// Preserve existing prediction data if it exists
 			is_selected: existingDetails?.is_selected ?? null,
 			prediction_percentage: existingDetails?.prediction_percentage ?? null,
-			prediction_updated_at: existingDetails?.prediction_updated_at ?? null,
 			updated_at: new Date().toISOString()
 		};
 
@@ -310,7 +347,6 @@ export async function updateUserSelection(authUserId: string, isSelected: boolea
 			.update({
 				is_selected: isSelected,
 				prediction_percentage: predictionPercentage,
-				prediction_updated_at: new Date().toISOString(),
 				updated_at: new Date().toISOString()
 			})
 			.eq('auth_user_id', authUserId)

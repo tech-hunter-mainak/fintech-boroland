@@ -14,14 +14,32 @@ export async function POST({ request, cookies }: RequestEvent) {
 	try {
 		const data = await request.json();
 
+		// Validate request data
+		if (!data || !data.action) {
+			return json({ success: false, error: 'Invalid request data' }, { status: 400 });
+		}
+
 		// Different logic based on action
 		if (data.action === 'register') {
 			// Handle user registration
 			const userData = data.userData;
 
+			// Validate required fields
+			if (!userData || !userData.email || !userData.mobile || !userData.password || !userData.fullName || !userData.gender) {
+				return json(
+					{
+						success: false,
+						error: 'Missing required fields'
+					},
+					{ status: 400 }
+				);
+			}
+
 			try {
 				// First check if user already exists
 				const existingUser = await getUserByEmailOrMobile(userData.email, userData.mobile);
+				
+				// If user exists, return error
 				if (existingUser) {
 					return json(
 						{
@@ -39,21 +57,29 @@ export async function POST({ request, cookies }: RequestEvent) {
 					password: userData.password
 				});
 
-				console.log('Auth user created:', authUser);
+				console.log('[Server] Auth user created:', authUser);
 
 				// Create initial user profile with basic details
 				const userDetails = await upsertUserDetails(authUser.id, {
 					gender: userData.gender,
-					fullName: userData.fullName,
-					whatsappUpdates: userData.whatsappUpdates || false,
-					isOtpValidated: true
+					full_name: userData.fullName,
+					whatsapp_updates: userData.whatsappUpdates || false,
+					is_otp_validated: true
 				});
 
-				// Set session cookie
-				cookies.set('session', JSON.stringify({ userId: authUser.id }), {
+				// Set session cookie with proper configuration
+				const sessionData = {
+					userId: authUser.id,
+					email: authUser.email,
+					mobile: authUser.mobile,
+					fullName: userData.fullName,
+					gender: userData.gender
+				};
+
+				cookies.set('session', JSON.stringify(sessionData), {
 					path: '/',
 					httpOnly: true,
-					sameSite: 'strict',
+					sameSite: 'lax', // Changed from 'strict' to 'lax' for better compatibility
 					secure: process.env.NODE_ENV === 'production',
 					maxAge: 60 * 60 * 24 * 30 // 30 days
 				});
@@ -61,12 +87,13 @@ export async function POST({ request, cookies }: RequestEvent) {
 				// Get full user data to return to client
 				const fullUserData = {
 					...authUser,
-					...userDetails
+					...userDetails,
+					hasSubmittedDetails: false
 				};
 
 				return json({ success: true, user: fullUserData });
 			} catch (error: any) {
-				console.error('Registration error:', error);
+				console.error('[Server] Registration error:', error);
 				return json(
 					{
 						success: false,
@@ -79,6 +106,16 @@ export async function POST({ request, cookies }: RequestEvent) {
 			// Handle login with password verification
 			const { identifier, password } = data.credentials;
 			const rememberMe = data.rememberMe || false;
+
+			if (!identifier || !password) {
+				return json(
+					{
+						success: false,
+						error: 'Missing credentials'
+					},
+					{ status: 400 }
+				);
+			}
 
 			// Verify credentials
 			const user = await verifyUserCredentials({
@@ -94,10 +131,18 @@ export async function POST({ request, cookies }: RequestEvent) {
 			const hasSubmittedDetails = await hasSubmittedDetailedInfo(user.auth.id);
 
 			// Set session cookie
-			cookies.set('session', JSON.stringify({ userId: user.auth.id }), {
+			const sessionData = {
+				userId: user.auth.id,
+				email: user.auth.email,
+				mobile: user.auth.mobile,
+				fullName: user.details?.fullName || '',
+				gender: user.details?.gender || ''
+			};
+
+			cookies.set('session', JSON.stringify(sessionData), {
 				path: '/',
 				httpOnly: true,
-				sameSite: 'strict',
+				sameSite: 'lax',
 				secure: process.env.NODE_ENV === 'production',
 				maxAge: rememberMe ? 60 * 60 * 24 * 30 : 60 * 60 * 24 // 30 days if remember me, else 1 day
 			});
@@ -106,7 +151,7 @@ export async function POST({ request, cookies }: RequestEvent) {
 			const fullUserData = {
 				...user.auth,
 				...(user.details || {}),
-				hasSubmittedDetails // Add this flag to the response
+				hasSubmittedDetails
 			};
 
 			return json({
@@ -178,11 +223,11 @@ export async function POST({ request, cookies }: RequestEvent) {
 			cookies.delete('temp_session', { path: '/' });
 
 			return json({ success: true });
+		} else {
+			return json({ success: false, error: 'Invalid action' }, { status: 400 });
 		}
-
-		return json({ success: false, error: 'Invalid action' }, { status: 400 });
 	} catch (error) {
-		console.error('Error in auth API:', error);
+		console.error('[Server] Error in auth API:', error);
 		return json({ success: false, error: 'Authentication failed' }, { status: 500 });
 	}
 }

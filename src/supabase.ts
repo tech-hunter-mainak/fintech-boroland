@@ -5,7 +5,9 @@ import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from '$env/static/publi
 const supabase = createClient(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY, {
     auth: {
         persistSession: true,
-        autoRefreshToken: true
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+        flowType: 'pkce'
     },
     db: {
         schema: 'public'
@@ -13,10 +15,26 @@ const supabase = createClient(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY, {
     global: {
         headers: {
             'Content-Type': 'application/json',
-            'Accept': 'application/json'
+            'Accept': 'application/json',
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache'
+        }
+    },
+    realtime: {
+        params: {
+            eventsPerSecond: 10
         }
     }
 });
+
+// Error handling wrapper
+export const handleSupabaseError = (error: any) => {
+    console.error('[Supabase] Error:', error);
+    if (error.status === 406) {
+        console.error('[Supabase] Not Acceptable - Check request headers and data format');
+    }
+    throw error;
+};
 
 export default supabase;
 
@@ -58,6 +76,8 @@ export interface UserDetails {
     prediction_percentage: number | null;
     created_at: string;
     updated_at: string;
+    whatsappUpdates?: boolean;
+    isOtpValidated?: boolean;
 }
 
 // Database helper functions
@@ -70,7 +90,7 @@ export async function fetchUserById(userId: string) {
             .eq('id', userId)
             .maybeSingle();
 
-        if (authError) throw authError;
+        if (authError) handleSupabaseError(authError);
 
         // Get user details
         const { data: userDetails, error: detailsError } = await supabase
@@ -79,6 +99,8 @@ export async function fetchUserById(userId: string) {
             .eq('auth_user_id', userId)
             .maybeSingle();
 
+        if (detailsError) handleSupabaseError(detailsError);
+
         // Combine the data
         return {
             ...authUser,
@@ -86,7 +108,7 @@ export async function fetchUserById(userId: string) {
             hasSubmittedDetails: !!userDetails
         };
     } catch (error) {
-        console.error('Error fetching user:', error);
+        console.error('[Supabase] Error fetching user:', error);
         throw error;
     }
 }
@@ -94,11 +116,13 @@ export async function fetchUserById(userId: string) {
 export async function updateUserDetails(userId: string, details: Partial<UserDetails>) {
     try {
         // First check if a record exists
-        const { data: existingRecord } = await supabase
+        const { data: existingRecord, error: checkError } = await supabase
             .from('user_details')
             .select('id')
             .eq('auth_user_id', userId)
             .maybeSingle();
+
+        if (checkError) handleSupabaseError(checkError);
 
         let result;
         if (existingRecord) {
@@ -113,7 +137,7 @@ export async function updateUserDetails(userId: string, details: Partial<UserDet
                 .select()
                 .single();
 
-            if (error) throw error;
+            if (error) handleSupabaseError(error);
             result = data;
         } else {
             // Insert new record
@@ -128,13 +152,13 @@ export async function updateUserDetails(userId: string, details: Partial<UserDet
                 .select()
                 .single();
 
-            if (error) throw error;
+            if (error) handleSupabaseError(error);
             result = data;
         }
 
         return result;
     } catch (error) {
-        console.error('Error updating user details:', error);
+        console.error('[Supabase] Error updating user details:', error);
         throw error;
     }
 }
@@ -142,11 +166,13 @@ export async function updateUserDetails(userId: string, details: Partial<UserDet
 export async function updatePrediction(userId: string, isSelected: boolean, predictionPercentage: number) {
     try {
         // First check if a record exists
-        const { data: existingRecord } = await supabase
+        const { data: existingRecord, error: checkError } = await supabase
             .from('user_details')
             .select('id')
             .eq('auth_user_id', userId)
             .maybeSingle();
+
+        if (checkError) handleSupabaseError(checkError);
 
         let result;
         if (existingRecord) {
@@ -162,7 +188,7 @@ export async function updatePrediction(userId: string, isSelected: boolean, pred
                 .select()
                 .single();
 
-            if (error) throw error;
+            if (error) handleSupabaseError(error);
             result = data;
         } else {
             // Insert new record
@@ -178,13 +204,13 @@ export async function updatePrediction(userId: string, isSelected: boolean, pred
                 .select()
                 .single();
 
-            if (error) throw error;
+            if (error) handleSupabaseError(error);
             result = data;
         }
 
         return result;
     } catch (error) {
-        console.error('Error updating prediction:', error);
+        console.error('[Supabase] Error updating prediction:', error);
         throw error;
     }
 }
