@@ -6,7 +6,7 @@
     console.log(user);
 </script>
 
-<div class="flex min-h-screen items-center justify-center">
+<div class="flex min-h-[90vh] items-center justify-center">
 	<!-- Card Container -->
 	<div class="mx-4 w-full max-w-md overflow-hidden rounded-xl bg-white shadow-lg md:max-w-2xl">
 		<!-- Card Header with Gradient Background -->

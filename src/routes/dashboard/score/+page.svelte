@@ -344,7 +344,7 @@
 	}
 </script>
 
-<div class="min-h-screen py-12">
+<div class="min-h-screen py-2">
 	<div class="mx-auto px-4 sm:px-6 lg:px-8">
 		<div class="rounded-lg bg-white p-6 md:p-8">
 			<h2 class="mb-6 text-2xl font-bold text-gray-800">Complete Your Profile</h2>
