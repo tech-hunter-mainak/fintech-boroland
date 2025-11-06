@@ -24,7 +24,7 @@
 		<div class="p-5">
 			<div class="text-sm font-bold uppercase text-indigo-600">Contact us</div>
 			<a class="my-3 block" href="/#"
-				>XXX XXXX, Floor 4 San Francisco, CA
+				>NIT Silchar Fakirtilla Cachar Assam - 788010
 				<span class="p-1 text-xs text-teal-600"></span></a
 			><a class="my-3 block" href="/#"
 				>contact@company.com
@@ -183,7 +183,7 @@
 				</svg>
 			</a>
 		</div>
-		<div class="my-5">© Copyright 2020. All Rights Reserved.</div>
+		<div class="my-5">© Copyright 2025. All Rights Reserved.</div>
 	</div>
 </div>
 
